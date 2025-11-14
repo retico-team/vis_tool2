@@ -1,0 +1,255 @@
+import { useEffect, useState, useMemo, memo } from 'react';
+import ReactFlow, {
+    Controls,
+    Background,
+    useNodesState,
+    useEdgesState,
+    MarkerType,
+    Position,
+    Handle
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+import { useTimelineData } from '@/hooks/useTimelineData';
+
+const CustomNode = memo(({ data }) => {
+    const updateTypeColors = {
+        COMMIT: 'bg-green-500',
+        ADD: 'bg-blue-500',
+        REVOKE: 'bg-red-500',
+        MODULE: 'bg-violet-500'
+    };
+
+    const isLatest = data.isLatest;
+    const isModule = data.isModule;
+
+    return (
+        <div
+            className={`px-4 py-3 rounded-lg border-2 shadow-lg transition-all duration-300 ${
+                isLatest ? 'border-yellow-400 ring-4 ring-yellow-200 scale-110' : 'border-gray-300'
+            } bg-white`}
+        >
+            {/* Add target handle on the left */}
+            <Handle 
+                type="target" 
+                position={Position.Left}
+                className="w-3 h-3 !bg-gray-400"
+            />
+            
+            <div className="flex items-center gap-2 mb-1">
+                <div className={`w-3 h-3 rounded-full ${updateTypeColors[data.updateType] || 'bg-gray-500'}`} />
+                <div className="font-semibold text-sm text-gray-800">{data.label}</div>
+            </div>
+            {isModule ? (
+                <div className="text-xs text-gray-600">
+                    <div>{data.timeCreated}</div>
+                </div>
+            ) : (
+                <div className="text-xs text-gray-600">
+                    <div>{data.updateType}</div>
+                    <div>Age: {data.age}</div>
+                </div> )}
+            
+            {/* Add source handle on the right */}
+            <Handle 
+                type="source" 
+                position={Position.Right}
+                className="w-3 h-3 !bg-gray-400"
+            />
+        </div>
+    );
+});
+
+CustomNode.displayName = 'CustomNode';
+
+const nodeTypes = {
+    custom: CustomNode,
+};
+
+export default function Timeline() {
+    const { nodes: timelineNodes, edges: timelineEdges, latestUpdate, isConnected } = useTimelineData();
+    const [nodes, setNodes, onNodesChange] = useNodesState([]);
+    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+    const [animatingEdges, setAnimatingEdges] = useState(new Set());
+
+    // Memoize flow nodes conversion
+    const flowNodes = useMemo(() => {
+        return timelineNodes.flatMap((node, index) => {
+            let y;
+            
+            if (node.isGroundedNode) {
+                y = 0;
+            }
+            else {
+                y = (index % 5) * -250 -150
+            }
+
+            const flowNode = {
+                id: node.id,
+                type: 'custom',
+                position: {
+                    x: (index * 250) + 50,
+                    y: y,
+                },
+                data: {
+                    label: node.label,
+                    updateType: node.updateType,
+                    age: node.age,
+                    isLatest: latestUpdate?.id === node.id,
+                    isModule: false
+                },
+                sourcePosition: Position.Right,
+                targetPosition: Position.Left,
+            };
+
+            const moduleNode = {
+                id: `${node.id}-module`,
+                type: 'custom',
+                position: {
+                    x: (index * 250) + 50,
+                    y: 100
+                },
+                data: {
+                    label: node.module,
+                    updateType: 'MODULE',
+                    isModule: true,
+                    timeCreated: node.timeCreated.toLocaleString()
+                }
+            }
+
+            return [flowNode, moduleNode];
+        });
+    }, [timelineNodes]);
+
+    // Convert timeline edges to ReactFlow edges
+    const flowEdges = useMemo(() => {
+        return timelineEdges.map((edge) => {
+            const isAnimating = animatingEdges.has(edge.id);
+            const isPrevious = edge.type === 'previous';
+            
+            return {
+                id: edge.id,
+                source: edge.source,
+                target: edge.target,
+                type: 'smoothstep',
+                animated: isAnimating,
+                style: {
+                    stroke: isPrevious ? '#3b82f6' : '#10b981',
+                    strokeWidth: isAnimating ? 3 : 2,
+                    strokeDasharray: isPrevious ? '0' : '5,5',
+                },
+                markerEnd: {
+                    type: MarkerType.ArrowClosed,
+                    color: isPrevious ? '#3b82f6' : '#10b981',
+                    width: 20,
+                    height: 20,
+                },
+                label: isPrevious ? 'previous' : 'grounded',
+                labelStyle: { 
+                    fontSize: 10, 
+                    fill: '#6b7280',
+                    fontWeight: 500,
+                },
+                labelBgStyle: { 
+                    fill: 'white', 
+                    fillOpacity: 0.8,
+                },
+            };
+        });
+    }, [timelineEdges, animatingEdges]);
+
+    // Update nodes when flowNodes changes
+    useEffect(() => {
+        setNodes(flowNodes);
+    }, [flowNodes, setNodes]);
+
+    // Update edges when flowEdges changes
+    useEffect(() => {
+        setEdges(flowEdges);
+    }, [flowEdges, setEdges]);
+
+    // Animate new edges
+    useEffect(() => {
+        if (latestUpdate) {
+            const newEdges = timelineEdges.filter(
+                (edge) => edge.target === latestUpdate.id
+            );
+
+            newEdges.forEach((edge) => {
+                setAnimatingEdges((prev) => new Set(prev).add(edge.id));
+
+                setTimeout(() => {
+                    setAnimatingEdges((prev) => {
+                        const next = new Set(prev);
+                        next.delete(edge.id);
+                        return next;
+                    });
+                }, 2000);
+            });
+        }
+    }, [latestUpdate, timelineEdges]);
+
+    return (
+        <div className="w-full h-full bg-gray-50">
+            <div className="absolute top-20 left-5 z-10 bg-white rounded-lg shadow-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                    <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
+                    <span className="text-sm font-semibold text-gray-700">
+                        {isConnected ? 'Connected' : 'Disconnected'}
+                    </span>
+                </div>
+                
+                <div className="text-xs text-gray-600 space-y-1">
+                    <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-green-500" />
+                        <span>COMMITTED</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-blue-500" />
+                        <span>ADD</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-red-500" />
+                        <span>REVOKE</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-violet-500" />
+                        <span>MODULE</span>
+                    </div>
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="text-xs text-gray-600">
+                        <div>Nodes: {timelineNodes.length}</div>
+                        <div>Edges: {timelineEdges.length}</div>
+                    </div>
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="text-xs text-gray-600 space-y-1">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-0.5 bg-blue-500" />
+                            <span>Previous</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-0.5 bg-green-500 border-dashed" style={{borderTop: '2px dashed'}} />
+                            <span>Grounded</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                nodeTypes={nodeTypes}
+                fitView
+                className="bg-gray-50"
+            >
+                <Background color="#ddd" gap={16} />
+                <Controls className="bg-white rounded-lg shadow-lg" />
+            </ReactFlow>
+        </div>
+    );
+}

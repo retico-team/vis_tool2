@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { ModuleSelectionContent } from '@/components/ModuleSelectionContent';
 import RecordButton from '@/components/RecordButton';
+import Timeline from '@/components/Timeline'; // Add this import
 
 export default function Navbar() {
   const [activeTab, setActiveTab] = useState('Module Selection');
   const [isRecording, setRecording] = useState(false);
   const [isLoading, setLoading] = useState(false);
-  const tabs = ['Module Selection', 'Timeline', 'Visualizer'];
+  const tabs = ['Module Selection', 'Timeline'];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -33,24 +34,26 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-gray-50 rounded-lg p-6">
           {activeTab === 'Module Selection' && <ModuleSelectionContent />}
+          
+          {/* Updated Timeline tab */}
           {activeTab === 'Timeline' && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Timeline</h2>
-                    <div className="max-w-7xl mx-auto px-4 pt-4">
-                    <RecordButton 
-                    id="main-recorder"
-                    isRecording={isRecording}
-                    setRecording={setRecording}
-                    isLoading={isLoading}
-                    setLoading={setLoading}
-                    />
-                  </div>
-            </div>
-          )}
-          {activeTab === 'Visualizer' && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Visualizer</h2>
-              <p className="text-gray-600">Content for Visualizer goes here.</p>
+            <div className="flex flex-col h-[calc(100vh-12rem)]">
+              {/* Header with RecordButton */}
+              <div className="bg-white rounded-t-lg shadow px-6 py-4 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-800">Timeline</h2>
+                <RecordButton 
+                  id="main-recorder"
+                  isRecording={isRecording}
+                  setRecording={setRecording}
+                  isLoading={isLoading}
+                  setLoading={setLoading}
+                />
+              </div>
+              
+              {/* Timeline visualization - takes remaining space */}
+              <div className="flex-1 bg-white rounded-b-lg shadow overflow-hidden">
+                <Timeline />
+              </div>
             </div>
           )}
         </div>

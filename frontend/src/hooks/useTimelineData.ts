@@ -1,0 +1,133 @@
+import { useCallback, useEffect, useState } from "react";
+import { useSocketContext } from "@/contexts/SocketContext";
+import type { TimelineData, IUData, TimelineNode } from "@/types/allTypes";
+
+export const useTimelineData = () => {
+    const { socket, isConnected } = useSocketContext();
+    const [timelineData, setTimelineData] = useState<TimelineData>({
+        nodes: new Map(),
+        edges: [],
+        latestUpdate: null,
+    });
+
+    const addNode = useCallback((data: IUData) => {
+        const node: TimelineNode = {
+            id: data.IUID,
+            label: data.IU,
+            updateType: data.UpdateType,
+            age: data.Age,
+            module: data.Module,
+            nodeCount: Number(data.IUID.split(":").pop()),
+            timeCreated: new Date(parseFloat(data.TimeCreated) * 1000),
+            previousNodeId: data.PreviousIUID,
+            groundedInNodeId: data.GroundedIn.IUID,
+            rawData: data,
+            isGroundedNode: false
+        };
+
+        const groundedInData = data.GroundedIn;
+
+        const groundedInNode: TimelineNode = {
+            id: groundedInData.IUID,
+            label: groundedInData.Module.split(" ")[0] + " Stream",
+            module: groundedInData.Module,
+            updateType: groundedInData.UpdateType,
+            age: groundedInData.Age,
+            timeCreated: new Date(parseFloat(groundedInData.TimeCreated) * 1000),
+            rawData: groundedInData,
+            isGroundedNode: true
+        }
+
+        setTimelineData((prev) => {
+            const newNodes = new Map(prev.nodes);
+            const existingNode = prev.nodes.get(node.id);
+            const existingGroundedInNode = prev.nodes.get(groundedInNode.id)
+            const newEdges = [...prev.edges];
+
+            if (!existingGroundedInNode) {
+                newNodes.set(groundedInNode.id, groundedInNode);
+            }
+
+            if (existingNode) {
+                // Node exists, update its data (important for ADD -> COMMIT transitions)
+                newNodes.set(node.id, node);
+                
+                return {
+                    nodes: newNodes,
+                    edges: prev.edges, // Edges stay the same for updates
+                    latestUpdate: node,
+                };
+            }
+
+            // New node - create it and its edges
+            newNodes.set(node.id, node);
+
+            // Add edge from previous node if it exists
+            if (node.previousNodeId && newNodes.has(node.previousNodeId)) {
+                const edgeId = `${node.previousNodeId}->${node.id}`;
+                if (!newEdges.find((e) => e.id === edgeId)) {
+                    newEdges.push({
+                        id: edgeId,
+                        source: node.previousNodeId,
+                        target: node.id,
+                        type: 'previous',
+                    });
+                }
+            }
+
+            // Add edge from grounded node if it exists and is different from previous
+            if (
+                node.groundedInNodeId && 
+                node.groundedInNodeId !== node.previousNodeId
+            ) {
+                const edgeId = `${node.groundedInNodeId}~>${node.id}`;
+                if (!newEdges.find((e) => e.id === edgeId)) {
+                    newEdges.push({
+                        id: edgeId,
+                        source: node.groundedInNodeId,
+                        target: node.id,
+                        type: 'grounded',
+                    });
+                }
+            }
+
+            return {
+                nodes: newNodes,
+                edges: newEdges,
+                latestUpdate: node,
+            };
+        });
+    }, []);
+
+    const clearTimeline = useCallback(() => {
+        setTimelineData({
+            nodes: new Map(),
+            edges: [],
+            latestUpdate: null,
+        });
+    }, []);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleData = (data: IUData) => {
+            console.log('Timeline data received:', data);
+            addNode(data);
+        };
+
+        socket.on('data', handleData);
+
+        return () => {
+            socket.off('data', handleData);
+        };
+    }, [socket, addNode]);
+
+    return {
+        nodes: Array.from(timelineData.nodes.values()),
+        nodesMap: timelineData.nodes,
+        edges: timelineData.edges,
+        latestUpdate: timelineData.latestUpdate,
+        isConnected,
+        clearTimeline,
+    };
+};
