@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSocketContext } from "@/contexts/SocketContext";
+import { getModuleColor } from "@/utils/TimelineUtils";
 import type { TimelineData, IUData, TimelineNode } from "@/types/allTypes";
 
 export const useTimelineData = () => {
     const { socket, isConnected } = useSocketContext();
+    const [uniqueModules, setUniqueModules] = useState<Set<string>>(new Set());
     const [timelineData, setTimelineData] = useState<TimelineData>({
         nodes: new Map(),
         edges: [],
@@ -22,7 +24,8 @@ export const useTimelineData = () => {
             previousNodeId: data.PreviousIUID,
             groundedInNodeId: data.GroundedIn.IUID,
             rawData: data,
-            isGroundedNode: false
+            isGroundedNode: false,
+            moduleList: data.ModuleList || []
         };
 
         const groundedInData = data.GroundedIn;
@@ -65,31 +68,41 @@ export const useTimelineData = () => {
             // Add edge from previous node if it exists
             if (node.previousNodeId && newNodes.has(node.previousNodeId)) {
                 const edgeId = `${node.previousNodeId}->${node.id}`;
-                if (!newEdges.find((e) => e.id === edgeId)) {
+                const existingEdge = newEdges.find((e) => e.id === edgeId);
+                if (!existingEdge) {
                     newEdges.push({
                         id: edgeId,
                         source: node.previousNodeId,
                         target: node.id,
                         type: 'previous',
+                        color: getModuleColor(node.module, 'previous'),
+                        age: node.age
                     });
                 }
             }
 
             // Add edge from grounded node if it exists and is different from previous
             if (
-                node.groundedInNodeId && 
-                node.groundedInNodeId !== node.previousNodeId
+                groundedInNode && 
+                groundedInNode.id !== node.previousNodeId
             ) {
-                const edgeId = `${node.groundedInNodeId}~>${node.id}`;
-                if (!newEdges.find((e) => e.id === edgeId)) {
+                const edgeId = `${groundedInNode.id}~>${node.id}`;
+                const existingEdge = newEdges.find((e) =>
+                    e.id === edgeId || (e.source === groundedInNode.id && e.groundedExists === true && e.module === node.module));
+                if (!existingEdge) {
                     newEdges.push({
                         id: edgeId,
-                        source: node.groundedInNodeId,
+                        source: groundedInNode.id,
                         target: node.id,
                         type: 'grounded',
+                        groundedExists: true,
+                        module: node.module,
+                        age: groundedInNode.age
                     });
                 }
             }
+
+            setUniqueModules((prev) => new Set(prev).add(node.module));
 
             return {
                 nodes: newNodes,
@@ -129,5 +142,6 @@ export const useTimelineData = () => {
         latestUpdate: timelineData.latestUpdate,
         isConnected,
         clearTimeline,
+        uniqueModules,
     };
 };

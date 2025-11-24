@@ -10,6 +10,8 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useTimelineData } from '@/hooks/useTimelineData';
+import { getModuleColor, scaleIU } from '@/utils/TimelineUtils';
+import { IUEdge } from '@/components/IUEdge';
 
 const CustomNode = memo(({ data }) => {
     const updateTypeColors = {
@@ -65,11 +67,14 @@ const nodeTypes = {
     custom: CustomNode,
 };
 
+const edgeTypes = {
+    animatedEdge: IUEdge,
+};
+
 export default function Timeline() {
-    const { nodes: timelineNodes, edges: timelineEdges, latestUpdate, isConnected } = useTimelineData();
+    const { nodes: timelineNodes, edges: timelineEdges, latestUpdate, isConnected, uniqueModules } = useTimelineData();
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-    const [animatingEdges, setAnimatingEdges] = useState(new Set());
 
     // Memoize flow nodes conversion
     const flowNodes = useMemo(() => {
@@ -80,7 +85,7 @@ export default function Timeline() {
                 y = 0;
             }
             else {
-                y = (index % 5) * -250 -150
+                y = (index % 5) * -250 - 150
             }
 
             const flowNode = {
@@ -112,7 +117,7 @@ export default function Timeline() {
                     label: node.module,
                     updateType: 'MODULE',
                     isModule: true,
-                    timeCreated: node.timeCreated.toLocaleString()
+                    timeCreated: node.timeCreated.toLocaleString() + node.timeCreated.getMilliseconds().toString().padStart(3, '0'),
                 }
             }
 
@@ -123,23 +128,24 @@ export default function Timeline() {
     // Convert timeline edges to ReactFlow edges
     const flowEdges = useMemo(() => {
         return timelineEdges.map((edge) => {
-            const isAnimating = animatingEdges.has(edge.id);
             const isPrevious = edge.type === 'previous';
+
             
             return {
                 id: edge.id,
                 source: edge.source,
                 target: edge.target,
-                type: 'smoothstep',
-                animated: isAnimating,
+                type: 'animatedEdge',
+                data: {
+                    age: scaleIU(isPrevious, edge),
+                },
                 style: {
-                    stroke: isPrevious ? '#3b82f6' : '#10b981',
-                    strokeWidth: isAnimating ? 3 : 2,
+                    stroke: isPrevious ? edge.color : '#10b981',
                     strokeDasharray: isPrevious ? '0' : '5,5',
                 },
                 markerEnd: {
                     type: MarkerType.ArrowClosed,
-                    color: isPrevious ? '#3b82f6' : '#10b981',
+                    color: isPrevious ? edge.color : '#10b981',
                     width: 20,
                     height: 20,
                 },
@@ -155,7 +161,7 @@ export default function Timeline() {
                 },
             };
         });
-    }, [timelineEdges, animatingEdges]);
+    }, [timelineEdges]);
 
     // Update nodes when flowNodes changes
     useEffect(() => {
@@ -166,27 +172,6 @@ export default function Timeline() {
     useEffect(() => {
         setEdges(flowEdges);
     }, [flowEdges, setEdges]);
-
-    // Animate new edges
-    useEffect(() => {
-        if (latestUpdate) {
-            const newEdges = timelineEdges.filter(
-                (edge) => edge.target === latestUpdate.id
-            );
-
-            newEdges.forEach((edge) => {
-                setAnimatingEdges((prev) => new Set(prev).add(edge.id));
-
-                setTimeout(() => {
-                    setAnimatingEdges((prev) => {
-                        const next = new Set(prev);
-                        next.delete(edge.id);
-                        return next;
-                    });
-                }, 2000);
-            });
-        }
-    }, [latestUpdate, timelineEdges]);
 
     return (
         <div className="w-full h-full bg-gray-50">
@@ -226,10 +211,17 @@ export default function Timeline() {
 
                 <div className="mt-3 pt-3 border-t border-gray-200">
                     <div className="text-xs text-gray-600 space-y-1">
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-0.5 bg-blue-500" />
-                            <span>Previous</span>
-                        </div>
+                        {Array.from(uniqueModules).map(module => (
+                            <div key={module} className="flex items-center gap-2">
+                                <div 
+                                    className="w-8 h-0.5" 
+                                    style={{
+                                        backgroundColor: getModuleColor(module, 'previous')
+                                    }}
+                                />
+                                <span>{module}</span>
+                            </div>
+                        ))}
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-0.5 bg-green-500 border-dashed" style={{borderTop: '2px dashed'}} />
                             <span>Grounded</span>
@@ -243,6 +235,7 @@ export default function Timeline() {
                 edges={edges}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
+                edgeTypes={edgeTypes}
                 nodeTypes={nodeTypes}
                 fitView
                 className="bg-gray-50"

@@ -18,6 +18,7 @@ interface TimelineNode {
     groundedInNodeId?: string;
     rawData: IUData;
     isGroundedNode?: boolean;
+    moduleList?: string[] | [];
 }
 
 interface TimelineEdge {
@@ -25,6 +26,8 @@ interface TimelineEdge {
     source: string;
     target: string;
     type: 'previous' | 'grounded';
+    groundedExists?: boolean;
+    module: string;
 }
 
 interface TimelineData {
