@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSocketContext } from "@/contexts/SocketContext";
 import { getModuleColor } from "@/utils/TimelineUtils";
-import type { TimelineData, IUData, TimelineNode } from "@/types/allTypes";
+import type { NetworkData, IUData, NetworkNode } from "@/types/allTypes";
 
-export const useTimelineData = () => {
+// cater towards network data structure and layout, follow network types
+
+export const useNetworkData = () => {
     const { socket, isConnected } = useSocketContext();
     const [uniqueModules, setUniqueModules] = useState<Set<string>>(new Set());
-    const [timelineData, setTimelineData] = useState<TimelineData>({
+    const [networkData, setNetworkData] = useState<NetworkData>({
         nodes: new Map(),
         edges: [],
-        latestUpdate: null,
     });
 
     const addNode = useCallback((data: IUData) => {
-        const node: TimelineNode = {
+        const node: NetworkNode = {
             id: data.IUID,
             label: data.IU,
             updateType: data.UpdateType,
@@ -29,7 +30,7 @@ export const useTimelineData = () => {
 
         const groundedInData = data.GroundedIn;
 
-        const groundedInNode: TimelineNode = {
+        const groundedInNode: NetworkNode = {
             id: groundedInData.IUID,
             label: groundedInData.Module.split(" ")[0] + " Stream",
             module: groundedInData.Module,
@@ -40,7 +41,7 @@ export const useTimelineData = () => {
             isGroundedNode: true
         }
 
-        setTimelineData((prev) => {
+        setNetworkData((prev) => {
             const newNodes = new Map(prev.nodes);
             const existingNode = prev.nodes.get(node.id);
             const existingGroundedInNode = prev.nodes.get(groundedInNode.id)
@@ -57,7 +58,6 @@ export const useTimelineData = () => {
                 return {
                     nodes: newNodes,
                     edges: prev.edges, // Edges stay the same for updates
-                    latestUpdate: node,
                 };
             }
 
@@ -106,16 +106,14 @@ export const useTimelineData = () => {
             return {
                 nodes: newNodes,
                 edges: newEdges,
-                latestUpdate: node,
             };
         });
     }, []);
 
-    const clearTimeline = useCallback(() => {
-        setTimelineData({
+    const clearNetwork = useCallback(() => {
+        setNetworkData({
             nodes: new Map(),
             edges: [],
-            latestUpdate: null,
         });
     }, []);
 
@@ -135,12 +133,11 @@ export const useTimelineData = () => {
     }, [socket, addNode]);
 
     return {
-        nodes: Array.from(timelineData.nodes.values()),
-        nodesMap: timelineData.nodes,
-        edges: timelineData.edges,
-        latestUpdate: timelineData.latestUpdate,
+        nodes: Array.from(networkData.nodes.values()),
+        nodesMap: networkData.nodes,
+        edges: networkData.edges,
         isConnected,
-        clearTimeline,
+        clearNetwork,
         uniqueModules,
     };
 };

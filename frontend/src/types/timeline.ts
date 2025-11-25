@@ -14,11 +14,11 @@ interface TimelineNode {
     age: number;
     nodeCount?: number;
     timeCreated: Date;
+    module: string;
     previousNodeId?: string;
     groundedInNodeId?: string;
     rawData: IUData;
     isGroundedNode?: boolean;
-    moduleList?: string[] | [];
 }
 
 interface TimelineEdge {

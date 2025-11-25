@@ -129,7 +129,6 @@ export default function Timeline() {
     const flowEdges = useMemo(() => {
         return timelineEdges.map((edge) => {
             const isPrevious = edge.type === 'previous';
-
             
             return {
                 id: edge.id,
