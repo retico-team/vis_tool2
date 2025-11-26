@@ -50,9 +50,10 @@ export const useTimelineData = () => {
                 newNodes.set(groundedInNode.id, groundedInNode);
             }
 
+            newNodes.set(node.id, node);
+
             if (existingNode) {
                 // Node exists, update its data (important for ADD -> COMMIT transitions)
-                newNodes.set(node.id, node);
                 
                 return {
                     nodes: newNodes,
@@ -60,9 +61,6 @@ export const useTimelineData = () => {
                     latestUpdate: node,
                 };
             }
-
-            // New node - create it and its edges
-            newNodes.set(node.id, node);
 
             // Add edge from previous node if it exists
             if (node.previousNodeId && newNodes.has(node.previousNodeId)) {

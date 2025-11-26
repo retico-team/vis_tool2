@@ -3,11 +3,8 @@ import { useSocketContext } from "@/contexts/SocketContext";
 import { getModuleColor } from "@/utils/TimelineUtils";
 import type { NetworkData, IUData, NetworkNode } from "@/types/allTypes";
 
-// cater towards network data structure and layout, follow network types
-
 export const useNetworkData = () => {
     const { socket, isConnected } = useSocketContext();
-    const [uniqueModules, setUniqueModules] = useState<Set<string>>(new Set());
     const [networkData, setNetworkData] = useState<NetworkData>({
         nodes: new Map(),
         edges: [],
@@ -16,92 +13,72 @@ export const useNetworkData = () => {
     const addNode = useCallback((data: IUData) => {
         const node: NetworkNode = {
             id: data.IUID,
-            label: data.IU,
-            updateType: data.UpdateType,
-            age: data.Age,
             module: data.Module,
-            nodeCount: Number(data.IUID.split(":").pop()),
-            timeCreated: new Date(parseFloat(data.TimeCreated) * 1000),
-            previousNodeId: data.PreviousIUID,
-            groundedInNodeId: data.GroundedIn.IUID,
-            rawData: data,
+            groundedInModule: data.GroundedIn.Module,
             isGroundedNode: false,
+            processedModules: data.ModuleList || [],
         };
-
-        const groundedInData = data.GroundedIn;
-
-        const groundedInNode: NetworkNode = {
-            id: groundedInData.IUID,
-            label: groundedInData.Module.split(" ")[0] + " Stream",
-            module: groundedInData.Module,
-            updateType: groundedInData.UpdateType,
-            age: groundedInData.Age,
-            timeCreated: new Date(parseFloat(groundedInData.TimeCreated) * 1000),
-            rawData: groundedInData,
-            isGroundedNode: true
-        }
 
         setNetworkData((prev) => {
             const newNodes = new Map(prev.nodes);
-            const existingNode = prev.nodes.get(node.id);
-            const existingGroundedInNode = prev.nodes.get(groundedInNode.id)
             const newEdges = [...prev.edges];
 
-            if (!existingGroundedInNode) {
-                newNodes.set(groundedInNode.id, groundedInNode);
-            }
+            newNodes.set(node.module, node);
 
-            if (existingNode) {
-                // Node exists, update its data (important for ADD -> COMMIT transitions)
-                newNodes.set(node.id, node);
-                
+            // Check if node already exists (update case)
+            // TODO potentially filter with updatetype of COMMIT as well?
+            if (prev.nodes.has(node.module)) {
                 return {
                     nodes: newNodes,
-                    edges: prev.edges, // Edges stay the same for updates
+                    edges: prev.edges,
                 };
             }
 
-            // New node - create it and its edges
-            newNodes.set(node.id, node);
+            // Create edges in the order: grounded -> current -> processed nodes
 
-            // Add edge from previous node if it exists
-            if (node.previousNodeId && newNodes.has(node.previousNodeId)) {
-                const edgeId = `${node.previousNodeId}->${node.id}`;
+            const edgesToCreate: Array<{ source: string; target: string; type: string }> = [];
+
+            if (node.groundedInModule) {
+                edgesToCreate.push({
+                    source: node.groundedInModule,
+                    target: node.module,
+                    type: 'grounded',
+                });
+            }
+
+            if (node.processedModules.length > 0) {
+                edgesToCreate.push({
+                    source: node.module,
+                    target: node.processedModules[0],
+                    type: 'processed',
+                });
+            }
+
+            for (let i = 0; i < node.processedModules.length - 1; i++) {
+                const currentModule = node.processedModules[i];
+                const nextModule = node.processedModules[i + 1];
+                
+                edgesToCreate.push({
+                    source: currentModule,
+                    target: nextModule,
+                    type: 'processed',
+                });
+            }
+
+            edgesToCreate.forEach(({ source, target, type }) => {
+                const edgeId = `${source}->${target}`;
                 const existingEdge = newEdges.find((e) => e.id === edgeId);
+                
                 if (!existingEdge) {
                     newEdges.push({
                         id: edgeId,
-                        source: node.previousNodeId,
-                        target: node.id,
-                        type: 'previous',
-                        color: getModuleColor(node.module, 'previous'),
-                        age: node.age
+                        source,
+                        target,
+                        type,
+                        color: getModuleColor(node.module, type),
                     });
                 }
-            }
-
-            // Add edge from grounded node if it exists and is different from previous
-            if (
-                groundedInNode && 
-                groundedInNode.id !== node.previousNodeId
-            ) {
-                const edgeId = `${groundedInNode.id}~>${node.id}`;
-                const existingEdge = newEdges.find((e) =>
-                    e.id === edgeId || (e.source === groundedInNode.id && e.groundedExists === true && e.module === node.module));
-                if (!existingEdge) {
-                    newEdges.push({
-                        id: edgeId,
-                        source: groundedInNode.id,
-                        target: node.id,
-                        type: 'grounded',
-                        groundedExists: true,
-                        module: node.module,
-                        age: groundedInNode.age
-                    });
-                }
-            }
-
-            setUniqueModules((prev) => new Set(prev).add(node.module));
+            });
 
             return {
                 nodes: newNodes,
@@ -121,7 +98,7 @@ export const useNetworkData = () => {
         if (!socket) return;
 
         const handleData = (data: IUData) => {
-            console.log('Timeline data received:', data);
+            console.log('Network data received:', data);
             addNode(data);
         };
 
@@ -138,6 +115,5 @@ export const useNetworkData = () => {
         edges: networkData.edges,
         isConnected,
         clearNetwork,
-        uniqueModules,
     };
 };
