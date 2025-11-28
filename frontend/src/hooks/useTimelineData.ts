@@ -50,9 +50,9 @@ export const useTimelineData = () => {
                 newNodes.set(groundedInNode.id, groundedInNode);
             }
 
-            newNodes.set(node.id, node);
 
             if (existingNode) {
+                newNodes.set(node.id, node);
                 // Node exists, update its data (important for ADD -> COMMIT transitions)
                 
                 return {
@@ -62,9 +62,11 @@ export const useTimelineData = () => {
                 };
             }
 
+            newNodes.set(node.id, node);
+
             // Add edge from previous node if it exists
             if (node.previousNodeId && newNodes.has(node.previousNodeId)) {
-                const edgeId = `${node.previousNodeId}->${node.id}`;
+                const edgeId = `${node.previousNodeId}~>${node.id}`;
                 const existingEdge = newEdges.find((e) => e.id === edgeId);
                 if (!existingEdge) {
                     newEdges.push({

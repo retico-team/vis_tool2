@@ -1,4 +1,6 @@
-export const getModuleColor = (module: string, type: 'previous' | 'grounded' = 'previous'): string => {
+// TODO add enum for different types
+
+export const getModuleColor = (module: string, type: 'previous' | 'grounded' | 'processed' = 'previous'): string => {
     // Hash function to generate a consistent number from a string
     const hashString = (str: string): number => {
         let hash = 0;

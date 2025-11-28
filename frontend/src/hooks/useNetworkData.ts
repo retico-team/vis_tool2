@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useSocketContext } from "@/contexts/SocketContext";
 import { getModuleColor } from "@/utils/TimelineUtils";
 import type { NetworkData, IUData, NetworkNode } from "@/types/allTypes";
@@ -9,10 +9,14 @@ export const useNetworkData = () => {
         nodes: new Map(),
         edges: [],
     });
+    
+    const edgeIdsRef = useRef<Set<string>>(new Set());
 
     const addNode = useCallback((data: IUData) => {
-        const node: NetworkNode = {
+
+        let node: NetworkNode = {
             id: data.IUID,
+            label: data.IU,
             module: data.Module,
             groundedInModule: data.GroundedIn.Module,
             isGroundedNode: false,
@@ -20,24 +24,63 @@ export const useNetworkData = () => {
         };
 
         setNetworkData((prev) => {
-            const newNodes = new Map(prev.nodes);
-            const newEdges = [...prev.edges];
+            const existingModules = prev.nodes.get(node.module)?.processedModules;
+            const newProcessedModules = node.processedModules || [];
+            
+            if (existingModules) {
+                const hasNewModules = newProcessedModules.some(
+                    mod => !existingModules.includes(mod)
+                );
+                
+                if (!hasNewModules) {
+                    return prev;
+                }
+                
+                const mergedModules = [
+                    ...existingModules,
+                    ...newProcessedModules.filter(mod => !existingModules.includes(mod))
+                ];
+                
+                node = {
+                    ...node,
+                    processedModules: mergedModules,
+                };
 
-            newNodes.set(node.module, node);
-
-            // Check if node already exists (update case)
-            // TODO potentially filter with updatetype of COMMIT as well?
-            if (prev.nodes.has(node.module)) {
+                const newNodes = new Map(prev.nodes);
+                newNodes.set(node.module, node);
+                
+                const newEdges = [...prev.edges];
+                const startIdx = existingModules.length;
+                
+                for (let i = startIdx; i < mergedModules.length; i++) {
+                    const source = i === 0 ? node.module : mergedModules[i - 1];
+                    const target = mergedModules[i];
+                    const edgeId = `${source}~>${target}`;
+                    
+                    if (!edgeIdsRef.current.has(edgeId)) {
+                        edgeIdsRef.current.add(edgeId);
+                        newEdges.push({
+                            id: edgeId,
+                            source,
+                            target,
+                            type: 'processed',
+                            color: getModuleColor(node.module, 'processed'),
+                        });
+                    }
+                }
+                
                 return {
                     nodes: newNodes,
-                    edges: prev.edges,
+                    edges: newEdges,
                 };
             }
-
-            // Create edges in the order: grounded -> current -> processed nodes
-
+            
+            const newNodes = new Map(prev.nodes);
+            newNodes.set(node.module, node);
+            
+            const newEdges = [...prev.edges];
             const edgesToCreate: Array<{ source: string; target: string; type: string }> = [];
-
+            
             if (node.groundedInModule) {
                 edgesToCreate.push({
                     source: node.groundedInModule,
@@ -45,31 +88,27 @@ export const useNetworkData = () => {
                     type: 'grounded',
                 });
             }
-
-            if (node.processedModules.length > 0) {
+            
+            if (newProcessedModules.length > 0) {
                 edgesToCreate.push({
                     source: node.module,
-                    target: node.processedModules[0],
+                    target: newProcessedModules[0],
                     type: 'processed',
                 });
-            }
-
-            for (let i = 0; i < node.processedModules.length - 1; i++) {
-                const currentModule = node.processedModules[i];
-                const nextModule = node.processedModules[i + 1];
                 
-                edgesToCreate.push({
-                    source: currentModule,
-                    target: nextModule,
-                    type: 'processed',
-                });
+                for (let i = 0; i < newProcessedModules.length - 1; i++) {
+                    edgesToCreate.push({
+                        source: newProcessedModules[i],
+                        target: newProcessedModules[i + 1],
+                        type: 'processed',
+                    });
+                }
             }
-
+            
             edgesToCreate.forEach(({ source, target, type }) => {
-                const edgeId = `${source}->${target}`;
-                const existingEdge = newEdges.find((e) => e.id === edgeId);
-                
-                if (!existingEdge) {
+                const edgeId = `${source}~>${target}`;
+                if (!edgeIdsRef.current.has(edgeId)) {
+                    edgeIdsRef.current.add(edgeId);
                     newEdges.push({
                         id: edgeId,
                         source,
@@ -79,7 +118,7 @@ export const useNetworkData = () => {
                     });
                 }
             });
-
+            
             return {
                 nodes: newNodes,
                 edges: newEdges,
@@ -88,6 +127,7 @@ export const useNetworkData = () => {
     }, []);
 
     const clearNetwork = useCallback(() => {
+        edgeIdsRef.current.clear();
         setNetworkData({
             nodes: new Map(),
             edges: [],
@@ -98,7 +138,6 @@ export const useNetworkData = () => {
         if (!socket) return;
 
         const handleData = (data: IUData) => {
-            console.log('Network data received:', data);
             addNode(data);
         };
 

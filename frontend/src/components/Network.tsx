@@ -2,7 +2,7 @@
  * change the set whenever it has more modules than before, they should be in order but just make sure
 */
 
-import { useTimelineData } from "../hooks/useTimelineData";
+import { useNetworkData } from '../hooks/useNetworkData';
 import { useEffect, useState, useMemo, memo } from 'react';
 import ReactFlow, {
     Controls,
@@ -17,7 +17,7 @@ import ReactFlow, {
 // TODO: implement the network graph using reactflow
 
 export default function Network() {
-    const { nodes: networkNodes, edges: networkEdges, isConnected, uniqueModules } = useTimelineData();
+    const { nodes: networkNodes, edges: networkEdges, } = useNetworkData();
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
