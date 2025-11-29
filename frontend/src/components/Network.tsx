@@ -1,119 +1,138 @@
-/** make network graph, we can use websocket data and listmodule and then use an set to store unique modules and only
- * change the set whenever it has more modules than before, they should be in order but just make sure
-*/
-
-import { useNetworkData } from '../hooks/useNetworkData';
-import { useEffect, useState, useMemo, memo } from 'react';
-import ReactFlow, {
+import { useCallback, useEffect, useMemo, memo } from 'react';
+    import ReactFlow, {
     Controls,
     Background,
+    MiniMap,
     useNodesState,
     useEdgesState,
     MarkerType,
-    Position,
-    Handle
+    BackgroundVariant,
+    Panel,
 } from 'reactflow';
+import type { Node, Edge } from 'reactflow';
+import 'reactflow/dist/style.css';
+import { useNetworkData } from '@/hooks/useNetworkData';
+import type { NetworkNode as CustomNetworkNode } from '@/types/allTypes';
 
-// TODO: implement the network graph using reactflow
+// Custom node component
+const CustomNode = ({ data }: { data: any }) => {
+  return (
+    <div 
+      className="px-4 py-2 rounded-lg border-2 shadow-md bg-white transition-all hover:shadow-lg"
+      style={{ 
+        borderColor: data.color,
+        minWidth: '120px',
+      }}
+    >
+      <div className="font-semibold text-sm text-gray-800">{data.module}</div>
+    </div>
+  );
+};
 
-export default function Network() {
-    const { nodes: networkNodes, edges: networkEdges, } = useNetworkData();
+const nodeTypes = {
+    custom: CustomNode,
+};
+
+export const Network = () => {
+    const { nodes: networkNodes, edges: networkEdges, isConnected, clearNetwork } = useNetworkData();
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-    const flowNodes = useMemo(() => {
-        return networkNodes.flatMap((node, index) => {
-            let y;
-            
-            if (node.isGroundedNode) {
-                y = 0;
-            }
-            else {
-                y = (index % 5) * -250 - 150
-            }
-
-            const flowNode = {
-                id: node.id,
-                type: 'custom',
-                position: {
-                    x: (index * 250) + 50,
-                    y: y,
-                },
-                data: {
-                    label: node.label,
-                    updateType: node.updateType,
-                    age: node.age,
-                    isModule: false
-                },
-                sourcePosition: Position.Right,
-                targetPosition: Position.Left,
-            };
-
-            const moduleNode = {
-                id: `${node.id}-module`,
-                type: 'custom',
-                position: {
-                    x: (index * 250) + 50,
-                    y: 100
-                },
-                data: {
-                    label: node.module,
-                    updateType: 'MODULE',
-                    isModule: true,
-                    timeCreated: node.timeCreated.toLocaleString() + node.timeCreated.getMilliseconds().toString().padStart(3, '0'),
-                },
-                sourcePosition: Position.Right,
-                targetPosition: Position.Left,
-            }
-
-            return [flowNode, moduleNode];
-        });
-    }, [networkNodes]);
-
-    // Convert timeline edges to ReactFlow edges
-    const flowEdges = useMemo(() => {
-        return networkEdges.map((edge) => {
-            const isPrevious = edge.type === 'previous';
-            
-            return {
-                id: edge.id,
-                source: edge.source,
-                target: edge.target,
-                type: 'animatedEdge',
-                data: {
-                    age: scaleIU(isPrevious, edge),
-                },
-                style: {
-                    stroke: isPrevious ? edge.color : '#10b981',
-                    strokeDasharray: isPrevious ? '0' : '5,5',
-                },
-                markerEnd: {
-                    type: MarkerType.ArrowClosed,
-                    color: isPrevious ? edge.color : '#10b981',
-                    width: 20,
-                    height: 20,
-                },
-                label: isPrevious ? 'previous' : 'grounded',
-                labelStyle: { 
-                    fontSize: 10, 
-                    fill: '#6b7280',
-                    fontWeight: 500,
-                },
-                labelBgStyle: { 
-                    fill: 'white', 
-                    fillOpacity: 0.8,
-                },
-            };
-        });
-    }, [networkEdges]);
-
-    // Update nodes when flowNodes changes
+    // Convert network data to ReactFlow format
     useEffect(() => {
+        // Transform nodes
+        const flowNodes = networkNodes.map((node: CustomNetworkNode, index: number) => {
+        // Simple circular layout
+        const angle = (index / networkNodes.length) * 2 * Math.PI;
+        const radius = 300;
+
+        console.log('Transforming node:', node);
+        
+        return {
+            id: node.module,
+            type: 'custom',
+            position: {
+            x: 400 + radius * Math.cos(angle),
+            y: 300 + radius * Math.sin(angle),
+            },
+            data: {
+            module: node.module,
+            color: node.color || '#6366f1',
+            },
+        };
+        
+        });
+
+        // Transform edges
+        const flowEdges = networkEdges.map((edge) => ({
+            id: edge.id,
+            source: edge.source,
+            target: edge.target,
+            type: edge.type === 'grounded' ? 'step' : 'smoothstep',
+            animated: edge.type === 'processed',
+            style: {
+                stroke: edge.color || '#6366f1',
+                strokeWidth: 2,
+            },
+            markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: edge.color || '#6366f1',
+            },
+            label: edge.type === 'grounded' ? 'grounded' : undefined,
+            labelStyle: { fontSize: 10, fill: '#666' },
+            labelBgStyle: { fill: 'white' },
+        }));
+
         setNodes(flowNodes);
-    }, [flowNodes, setNodes]);
-
-    // Update edges when flowEdges changes
-    useEffect(() => {
         setEdges(flowEdges);
-    }, [flowEdges, setEdges]);
-}
+    }, [networkNodes, networkEdges, setNodes, setEdges]);
+
+    const handleClear = useCallback(() => {
+        clearNetwork();
+    }, [clearNetwork]);
+
+  return (
+    <div className="w-full h-screen bg-gray-50">
+        <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            nodeTypes={nodeTypes}
+            fitView
+            attributionPosition="bottom-left"
+        >
+            <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+            <Controls />
+            <MiniMap 
+            nodeColor={(node) => node.data.color || '#6366f1'}
+            className="bg-white"
+            />
+        
+        <Panel position="top-right" className="bg-white rounded-lg shadow-md p-4 space-y-2">
+            <div className="flex items-center gap-2">
+                <div 
+                className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+                />
+                <span className="text-sm font-medium text-gray-700">
+                {isConnected ? 'Connected' : 'Disconnected'}
+                </span>
+            </div>
+            
+            <div className="text-xs text-gray-500">
+                {networkNodes.length} nodes · {networkEdges.length} edges
+            </div>
+          
+            <button
+                onClick={handleClear}
+                className="w-full px-3 py-1.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded transition-colors"
+            >
+                Clear Network
+            </button>
+        </Panel>
+      </ReactFlow>
+    </div>
+  );
+};
+
+export default Network;

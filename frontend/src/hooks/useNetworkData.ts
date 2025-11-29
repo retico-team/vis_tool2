@@ -24,10 +24,13 @@ export const useNetworkData = () => {
         };
 
         setNetworkData((prev) => {
+            const newNodes = new Map(prev.nodes);
+            const newEdges = [...prev.edges];
             const existingModules = prev.nodes.get(node.module)?.processedModules;
             const newProcessedModules = node.processedModules || [];
             
             if (existingModules) {
+                console.log('Updating node in network: IN ', node);
                 const hasNewModules = newProcessedModules.some(
                     mod => !existingModules.includes(mod)
                 );
@@ -35,21 +38,29 @@ export const useNetworkData = () => {
                 if (!hasNewModules) {
                     return prev;
                 }
-                
+
+                const nonExistingModules = [...newProcessedModules.filter(mod => !existingModules.includes(mod))]
                 const mergedModules = [
                     ...existingModules,
-                    ...newProcessedModules.filter(mod => !existingModules.includes(mod))
+                    ...nonExistingModules
                 ];
-                
+
                 node = {
                     ...node,
                     processedModules: mergedModules,
                 };
 
-                const newNodes = new Map(prev.nodes);
                 newNodes.set(node.module, node);
-                
-                const newEdges = [...prev.edges];
+
+                nonExistingModules.forEach(mod => {
+                    node = {
+                        module: mod,
+                        color: getModuleColor(mod, 'processed'),
+                    };
+
+                    newNodes.set(mod, node);
+                });
+
                 const startIdx = existingModules.length;
                 
                 for (let i = startIdx; i < mergedModules.length; i++) {
@@ -74,11 +85,8 @@ export const useNetworkData = () => {
                     edges: newEdges,
                 };
             }
-            
-            const newNodes = new Map(prev.nodes);
-            newNodes.set(node.module, node);
-            
-            const newEdges = [...prev.edges];
+
+            console.log('Adding node to network: OUT ', node);
             const edgesToCreate: Array<{ source: string; target: string; type: string }> = [];
             
             if (node.groundedInModule) {

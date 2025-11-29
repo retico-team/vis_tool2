@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { ModuleSelectionContent } from '@/components/ModuleSelectionContent';
 import RecordButton from '@/components/RecordButton';
-import Timeline from '@/components/Timeline'; // Add this import
+import Timeline from '@/components/Timeline';
+import { Network } from '@/components/Network';
 
 export default function Navbar() {
   const [activeTab, setActiveTab] = useState('Module Selection');
   const [isRecording, setRecording] = useState(false);
   const [isLoading, setLoading] = useState(false);
-  const tabs = ['Module Selection', 'Timeline'];
+  const tabs = ['Module Selection', 'Timeline', 'Network'];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -56,6 +57,7 @@ export default function Navbar() {
               </div>
             </div>
           )}
+          {activeTab === 'Network' && <div className="h-[calc(100vh-8rem)]"><Network/></div>}
         </div>
       </div>
     </div>

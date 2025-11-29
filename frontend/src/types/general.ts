@@ -10,3 +10,9 @@ interface DefaultButtonProps extends Omit<HTMLAttributes<HTMLButtonElement>, 'on
     setLoading: (value: boolean) => void;
     onClick?: (id: string) => void;
 }
+
+const edgeTypes = {
+    PREVIOUS: 'previous',
+    GROUNDED: 'grounded',
+    PROCESSED: 'processed',
+}

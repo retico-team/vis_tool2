@@ -12,9 +12,10 @@ import 'reactflow/dist/style.css';
 import { useTimelineData } from '@/hooks/useTimelineData';
 import { getModuleColor, scaleIU } from '@/utils/TimelineUtils';
 import { IUEdge } from '@/components/IUEdge';
+import type { updateTypeColors } from '@/types/allTypes';
 
 const CustomNode = memo(({ data }) => {
-    const updateTypeColors = {
+    const updateTypeColors: updateTypeColors = {
         COMMIT: 'bg-green-500',
         ADD: 'bg-blue-500',
         REVOKE: 'bg-red-500',
