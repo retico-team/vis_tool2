@@ -34,16 +34,14 @@ class RunnerController:
         zmqwriter = ZeroMQWriter(topic='asr')
         # reader.add(topic='asr', target_iu_type=IncrementalUnit)
         
-        
         microphone.subscribe(asr)
         microphone.subscribe(wav2vec_asr)
         # microphone.subscribe(gasr)
+        wav2vec_asr.subscribe(zmqwriter)
         asr.subscribe(zmqwriter)
         
         # reader.subscribe(logger)
         # reader.subscribe(debug)
-        microphone.subscribe(logger)
-        zmqwriter.subscribe(logger)
         # gasr.subscribe(logger)
         asr.subscribe(logger)
         wav2vec_asr.subscribe(logger)

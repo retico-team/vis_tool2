@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ModuleSelectionContent } from '@/components/ModuleSelectionContent';
 import RecordButton from '@/components/RecordButton';
 import Timeline from '@/components/Timeline';
-import { Network } from '@/components/Network';
+import Network from '@/components/Network';
 
 export default function Navbar() {
   const [activeTab, setActiveTab] = useState('Module Selection');
@@ -34,12 +34,12 @@ export default function Navbar() {
       
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-gray-50 rounded-lg p-6">
-          {activeTab === 'Module Selection' && <ModuleSelectionContent />}
+          <div className={activeTab === 'Module Selection' ? 'block' : 'hidden'}>
+            <ModuleSelectionContent />
+          </div>
           
-          {/* Updated Timeline tab */}
-          {activeTab === 'Timeline' && (
+          <div className={activeTab === 'Timeline' ? 'block' : 'hidden'}>
             <div className="flex flex-col h-[calc(100vh-12rem)]">
-              {/* Header with RecordButton */}
               <div className="bg-white rounded-t-lg shadow px-6 py-4 flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-800">Timeline</h2>
                 <RecordButton 
@@ -51,13 +51,17 @@ export default function Navbar() {
                 />
               </div>
               
-              {/* Timeline visualization - takes remaining space */}
               <div className="flex-1 bg-white rounded-b-lg shadow overflow-hidden">
                 <Timeline />
               </div>
             </div>
-          )}
-          {activeTab === 'Network' && <div className="h-[calc(100vh-8rem)]"><Network/></div>}
+          </div>
+          
+          <div className={activeTab === 'Network' ? 'block' : 'hidden'}>
+            <div className="h-[calc(100vh-8rem)]">
+              <Network />
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -14,19 +14,24 @@ export const useNetworkData = () => {
 
     const addNode = useCallback((data: IUData) => {
 
-        let node: NetworkNode = {
-            id: data.IUID,
-            label: data.IU,
-            module: data.Module,
+        const node: NetworkNode = {
+            id: data.Module,
             groundedInModule: data.GroundedIn.Module,
             isGroundedNode: false,
             processedModules: data.ModuleList || [],
         };
 
+        const groundedInData = data.GroundedIn;
+
+        const groundedInNode: NetworkNode = {
+            id: groundedInData.Module,
+            isGroundedNode: true,
+        }
+
         setNetworkData((prev) => {
             const newNodes = new Map(prev.nodes);
             const newEdges = [...prev.edges];
-            const existingModules = prev.nodes.get(node.module)?.processedModules;
+            const existingModules = prev.nodes.get(node.id)?.processedModules;
             const newProcessedModules = node.processedModules || [];
             
             if (existingModules) {
@@ -45,26 +50,28 @@ export const useNetworkData = () => {
                     ...nonExistingModules
                 ];
 
-                node = {
+                const updatedNode = {
                     ...node,
                     processedModules: mergedModules,
                 };
 
-                newNodes.set(node.module, node);
+                newNodes.set(groundedInNode.id, groundedInNode);
+                newNodes.set(node.id, updatedNode);
 
                 nonExistingModules.forEach(mod => {
-                    node = {
-                        module: mod,
+                    const newNode = {
+                        id: mod,
+                        isGroundedNode: false,
                         color: getModuleColor(mod, 'processed'),
                     };
 
-                    newNodes.set(mod, node);
+                    newNodes.set(mod, newNode);
                 });
 
                 const startIdx = existingModules.length;
                 
                 for (let i = startIdx; i < mergedModules.length; i++) {
-                    const source = i === 0 ? node.module : mergedModules[i - 1];
+                    const source = i === 0 ? node.id : mergedModules[i - 1];
                     const target = mergedModules[i];
                     const edgeId = `${source}~>${target}`;
                     
@@ -75,7 +82,7 @@ export const useNetworkData = () => {
                             source,
                             target,
                             type: 'processed',
-                            color: getModuleColor(node.module, 'processed'),
+                            color: getModuleColor(node.id, 'processed'),
                         });
                     }
                 }
@@ -87,19 +94,30 @@ export const useNetworkData = () => {
             }
 
             console.log('Adding node to network: OUT ', node);
+            newNodes.set(groundedInNode.id, groundedInNode);
+            newNodes.set(node.id, node);
+
+            newProcessedModules.forEach(mod => {
+                const newNode = {
+                    id: mod,
+                    isGroundedNode: false,
+                    color: getModuleColor(mod, 'processed'),
+                };
+                newNodes.set(mod, newNode);
+            });
             const edgesToCreate: Array<{ source: string; target: string; type: string }> = [];
             
             if (node.groundedInModule) {
                 edgesToCreate.push({
                     source: node.groundedInModule,
-                    target: node.module,
+                    target: node.id,
                     type: 'grounded',
                 });
             }
             
             if (newProcessedModules.length > 0) {
                 edgesToCreate.push({
-                    source: node.module,
+                    source: node.id,
                     target: newProcessedModules[0],
                     type: 'processed',
                 });
@@ -122,7 +140,7 @@ export const useNetworkData = () => {
                         source,
                         target,
                         type,
-                        color: getModuleColor(node.module, type),
+                        color: getModuleColor(node.id, type),
                     });
                 }
             });

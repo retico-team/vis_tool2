@@ -1,10 +1,9 @@
 interface NetworkNode {
     id: string;
-    label: string;
-    module: string;
     groundedInModule?: string;
-    isGroundedNode?: boolean;
-    processedModules: string[];
+    isGroundedNode: boolean;
+    processedModules?: string[];
+    color?: string;
 }
 
 interface NetworkEdge {
