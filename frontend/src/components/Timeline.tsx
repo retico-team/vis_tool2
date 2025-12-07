@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, memo } from 'react';
+import { useEffect, useState, useMemo, memo, useCallback } from 'react';
 import ReactFlow, {
     Controls,
     Background,
@@ -6,7 +6,8 @@ import ReactFlow, {
     useEdgesState,
     MarkerType,
     Position,
-    Handle
+    Handle,
+    Panel
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useTimelineData } from '@/hooks/useTimelineData';
@@ -73,7 +74,7 @@ const edgeTypes = {
 };
 
 export default function Timeline() {
-    const { nodes: timelineNodes, edges: timelineEdges, latestUpdate, isConnected, uniqueModules } = useTimelineData();
+    const { nodes: timelineNodes, edges: timelineEdges, latestUpdate, isConnected, clearTimeline, uniqueModules } = useTimelineData();
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
@@ -173,13 +174,31 @@ export default function Timeline() {
         setEdges(flowEdges);
     }, [flowEdges, setEdges]);
 
+    const handleClear = useCallback(() => {
+        clearTimeline();
+    }, [clearTimeline]);
+
     return (
         <div className="w-full h-full bg-gray-50">
-            <div className="absolute top-20 left-5 z-10 bg-white rounded-lg shadow-lg p-4">
-                <div className="flex items-center gap-2 mb-3">
-                    <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
-                    <span className="text-sm font-semibold text-gray-700">
-                        {isConnected ? 'Connected' : 'Disconnected'}
+            <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                edgeTypes={edgeTypes}
+                nodeTypes={nodeTypes}
+                fitView
+                className="bg-gray-50"
+            >
+                <Background color="#ddd" gap={16} />
+                <Controls className="bg-white rounded-lg shadow-lg" />
+            <Panel position="top-left" className="bg-white rounded-lg shadow-md p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                    <div 
+                    className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                    {isConnected ? 'Connected' : 'Disconnected'}
                     </span>
                 </div>
                 
@@ -228,20 +247,14 @@ export default function Timeline() {
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                edgeTypes={edgeTypes}
-                nodeTypes={nodeTypes}
-                fitView
-                className="bg-gray-50"
-            >
-                <Background color="#ddd" gap={16} />
-                <Controls className="bg-white rounded-lg shadow-lg" />
+                <button
+                onClick={handleClear}
+                className="w-full px-3 py-1.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded transition-colors"
+                >
+                    Clear Timeline
+                </button>
+            </Panel>
             </ReactFlow>
         </div>
     );

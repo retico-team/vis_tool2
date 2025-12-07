@@ -12,7 +12,7 @@ export const useTimelineData = () => {
         latestUpdate: null,
     });
 
-    const addNode = useCallback((data: IUData) => {
+    const addNode = useCallback((data) => {
         const node: TimelineNode = {
             id: data.IUID,
             label: data.IU,
@@ -50,10 +50,9 @@ export const useTimelineData = () => {
                 newNodes.set(groundedInNode.id, groundedInNode);
             }
 
-
+            // Node exists, update its data (important for ADD -> COMMIT transitions)
             if (existingNode) {
                 newNodes.set(node.id, node);
-                // Node exists, update its data (important for ADD -> COMMIT transitions)
                 
                 return {
                     nodes: newNodes,
@@ -122,7 +121,7 @@ export const useTimelineData = () => {
     useEffect(() => {
         if (!socket) return;
 
-        const handleData = (data: IUData) => {
+        const handleData = (data) => {
             console.log('Timeline data received:', data);
             addNode(data);
         };

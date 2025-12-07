@@ -1,159 +1,126 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useSocketContext } from "@/contexts/SocketContext";
 import { getModuleColor } from "@/utils/TimelineUtils";
-import type { NetworkData, IUData, NetworkNode } from "@/types/allTypes";
+import type { NetworkData, IUData, NetworkNode, NetworkFlowData } from "@/types/allTypes";
 
 export const useNetworkData = () => {
     const { socket, isConnected } = useSocketContext();
-    const [networkData, setNetworkData] = useState<NetworkData>({
+    const [networkData, setNetworkData] = useState<NetworkFlowData>({
         nodes: new Map(),
         edges: [],
+        uniqueModules: new Set<string>(),
     });
-    
-    const edgeIdsRef = useRef<Set<string>>(new Set());
 
-    const addNode = useCallback((data: IUData) => {
-
-        const node: NetworkNode = {
-            id: data.Module,
-            groundedInModule: data.GroundedIn.Module,
-            isGroundedNode: false,
-            processedModules: data.ModuleList || [],
-        };
-
-        const groundedInData = data.GroundedIn;
-
-        const groundedInNode: NetworkNode = {
-            id: groundedInData.Module,
-            isGroundedNode: true,
+    const addNode = useCallback((data: any) => {
+        const networkData: any = {
+            networkList: data.NetworkList,
+            degreeCount: data.DegreeCount,
+            modules: data.Modules,
+            connections: data.Connections || [],
         }
 
         setNetworkData((prev) => {
             const newNodes = new Map(prev.nodes);
             const newEdges = [...prev.edges];
-            const existingModules = prev.nodes.get(node.id)?.processedModules;
-            const newProcessedModules = node.processedModules || [];
-            
-            if (existingModules) {
-                console.log('Updating node in network: IN ', node);
-                const hasNewModules = newProcessedModules.some(
-                    mod => !existingModules.includes(mod)
-                );
-                
-                if (!hasNewModules) {
-                    return prev;
-                }
+            const newModules = new Set(prev.uniqueModules);
 
-                const nonExistingModules = [...newProcessedModules.filter(mod => !existingModules.includes(mod))]
-                const mergedModules = [
-                    ...existingModules,
-                    ...nonExistingModules
-                ];
+            const idToNodeMap = new Map<string, NetworkNode>();
+            const inDegree = new Map<string, number>();
+            const childrenMap = new Map<string, Set<string>>();
+    
+            Object.entries(networkData.networkList).forEach(([module, info]: [string, any]) => {
+                inDegree.set(module, 0);
+                idToNodeMap.set(module, info);
+                newModules.add(module);
+            });
 
-                const updatedNode = {
-                    ...node,
-                    processedModules: mergedModules,
+            Object.entries(networkData.networkList).forEach(([module, info]) => {
+                for (const parent of info.previous_mods) {
+                    if (!childrenMap.has(parent)) {
+                        childrenMap.set(parent, new Set<string>);
+                    }
+                    inDegree.set(module, (inDegree.get(module) || 0) + 1);
+                    childrenMap.get(parent)!.add(module);
                 };
+            });
 
-                newNodes.set(groundedInNode.id, groundedInNode);
-                newNodes.set(node.id, updatedNode);
+            // Kahn's Algorithm for layering (topological sort)
 
-                nonExistingModules.forEach(mod => {
-                    const newNode = {
-                        id: mod,
-                        isGroundedNode: false,
-                        color: getModuleColor(mod, 'processed'),
-                    };
+            const layers = [];
+            let currentLayer = [];
 
-                    newNodes.set(mod, newNode);
-                });
+            // Start with nodes that have no parents (inDegree = 0), these are root nodes
+            for (const [module, degree] of inDegree.entries()) {
+                if (degree === 0) currentLayer.push(module);
+            }
 
-                const startIdx = existingModules.length;
-                
-                for (let i = startIdx; i < mergedModules.length; i++) {
-                    const source = i === 0 ? node.id : mergedModules[i - 1];
-                    const target = mergedModules[i];
-                    const edgeId = `${source}~>${target}`;
-                    
-                    if (!edgeIdsRef.current.has(edgeId)) {
-                        edgeIdsRef.current.add(edgeId);
-                        newEdges.push({
-                            id: edgeId,
-                            source,
-                            target,
-                            type: 'processed',
-                            color: getModuleColor(node.id, 'processed'),
-                        });
+            //process the current node
+            while (currentLayer.length > 0) {
+                const layerNodes = [];
+                const nextLayer: string[] = [];
+
+                for (const module of currentLayer) {
+                    const node = idToNodeMap.get(module);
+                    if (node) layerNodes.push(node);
+
+                    const children = childrenMap.get(module) || [];
+                    for (const childId of children) {
+                        inDegree.set(childId, (inDegree.get(childId) || 0) - 1);
+                        if (inDegree.get(childId) === 0) {
+                            nextLayer.push(childId);
+                        }
                     }
                 }
-                
-                return {
-                    nodes: newNodes,
-                    edges: newEdges,
-                };
+
+                layers.push(layerNodes);
+                currentLayer = nextLayer;
             }
 
-            console.log('Adding node to network: OUT ', node);
-            newNodes.set(groundedInNode.id, groundedInNode);
-            newNodes.set(node.id, node);
+            const allLayeredNodes = new Set(layers.flat().map(mod => mod.current_mod));
+            const missingNodes = networkData.modules.filter(mod => !allLayeredNodes.has(mod));
 
-            newProcessedModules.forEach(mod => {
-                const newNode = {
-                    id: mod,
-                    isGroundedNode: false,
-                    color: getModuleColor(mod, 'processed'),
-                };
-                newNodes.set(mod, newNode);
+            if (missingNodes.length > 0) {
+                console.warn('Adding unlayered nodes to a new layer due to cycle or missing dependencies:', missingNodes.map(mod => mod));
+                layers.push(missingNodes);
+            }
+
+            layers.forEach((layer, layerIndex) => {
+                layer.forEach((module: any, index: number) => {
+                    if (!newNodes.has(module.current_mod)) {
+                        newNodes.set(module.current_mod, {
+                            id: module.current_mod,
+                            layerXPos: layerIndex,
+                            layerYPos: index,
+                            color: getModuleColor(module.current_mod),
+                        });
+                    }
+                });
             });
-            const edgesToCreate: Array<{ source: string; target: string; type: string }> = [];
-            
-            if (node.groundedInModule) {
-                edgesToCreate.push({
-                    source: node.groundedInModule,
-                    target: node.id,
-                    type: 'grounded',
-                });
-            }
-            
-            if (newProcessedModules.length > 0) {
-                edgesToCreate.push({
-                    source: node.id,
-                    target: newProcessedModules[0],
-                    type: 'processed',
-                });
-                
-                for (let i = 0; i < newProcessedModules.length - 1; i++) {
-                    edgesToCreate.push({
-                        source: newProcessedModules[i],
-                        target: newProcessedModules[i + 1],
-                        type: 'processed',
-                    });
-                }
-            }
-            
-            edgesToCreate.forEach(({ source, target, type }) => {
-                const edgeId = `${source}~>${target}`;
-                if (!edgeIdsRef.current.has(edgeId)) {
-                    edgeIdsRef.current.add(edgeId);
-                    newEdges.push({
-                        id: edgeId,
-                        source,
-                        target,
-                        type,
-                        color: getModuleColor(node.id, type),
-                    });
+
+            networkData.connections.forEach((conn) => {
+                const edgeId = `${conn.From}->${conn.To}`;
+                if (!newEdges.find((e) => e.id === edgeId)) {
+                    newEdges.push(
+                        { 
+                            id: edgeId, 
+                            source: conn.From,
+                            target: conn.To,
+                            type: 'processed',
+                            color: getModuleColor(conn.From),
+                        }
+                    );
                 }
             });
-            
+
             return {
                 nodes: newNodes,
                 edges: newEdges,
+                uniqueModules: newModules,
             };
         });
     }, []);
 
     const clearNetwork = useCallback(() => {
-        edgeIdsRef.current.clear();
         setNetworkData({
             nodes: new Map(),
             edges: [],
@@ -163,14 +130,14 @@ export const useNetworkData = () => {
     useEffect(() => {
         if (!socket) return;
 
-        const handleData = (data: IUData) => {
+        const handleData = (data: any) => {
             addNode(data);
         };
 
-        socket.on('data', handleData);
+        socket.on('network', handleData);
 
         return () => {
-            socket.off('data', handleData);
+            socket.off('network', handleData);
         };
     }, [socket, addNode]);
 
@@ -180,5 +147,6 @@ export const useNetworkData = () => {
         edges: networkData.edges,
         isConnected,
         clearNetwork,
+        uniqueModules: networkData.uniqueModules,
     };
 };

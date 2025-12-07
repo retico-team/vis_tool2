@@ -4,17 +4,20 @@ interface NetworkNode {
     isGroundedNode: boolean;
     processedModules?: string[];
     color?: string;
+    position: number;
 }
 
 interface NetworkEdge {
     id: string;
     source: string;
     target: string;
-    groundedExists?: boolean;
-    module: string;
+}
+
+interface NetworkFlowData {
+    nodes: Map<string, NetworkNode>;
+    edges: NetworkEdge[];
 }
 
 interface NetworkData {
-    nodes: Map<string, NetworkNode>;
-    edges: NetworkEdge[];
+    // to be filled out
 }

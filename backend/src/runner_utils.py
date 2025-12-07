@@ -25,7 +25,7 @@ class RunnerController:
         # gasr = GoogleASRModule()
         asr = WhisperASRModule(language="english")
         logger = LoggerModule(sio=self.sio, route='data')
-        debug = DebugModule(print_payload_only=False)
+        debug = DebugModule()
         wav2vec_asr = Wav2VecASRModule()
 
         ip = '127.0.0.1'
@@ -43,6 +43,9 @@ class RunnerController:
         # reader.subscribe(logger)
         # reader.subscribe(debug)
         # gasr.subscribe(logger)
+        asr.subscribe(debug)
+        wav2vec_asr.subscribe(debug)
+        
         asr.subscribe(logger)
         wav2vec_asr.subscribe(logger)
 
@@ -52,6 +55,7 @@ class RunnerController:
         asr.run()
         zmqwriter.run()
         # reader.run()
+        debug.run()
         logger.run()
         
         self.initialized.set()
@@ -65,6 +69,7 @@ class RunnerController:
         zmqwriter.stop()
         # reader.stop()
         logger.stop()
+        debug.stop()
         
     
     def start(self):

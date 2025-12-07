@@ -1,22 +1,22 @@
 import { useCallback, useEffect, useMemo, memo } from 'react';
-    import ReactFlow, {
-    Controls,
-    Background,
-    MiniMap,
-    useNodesState,
-    useEdgesState,
-    MarkerType,
-    BackgroundVariant,
-    Panel,
-    Handle,
-    Position,
+import ReactFlow, {
+  Controls,
+  Background,
+  MiniMap,
+  useNodesState,
+  useEdgesState,
+  MarkerType,
+  BackgroundVariant,
+  Panel,
+  Handle,
+  Position,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useNetworkData } from '@/hooks/useNetworkData';
 import type { NetworkNode as CustomNetworkNode } from '@/types/allTypes';
+import { getModuleColor } from '../utils/TimelineUtils';
 
-// Custom node component
-const CustomNode = memo(({ data }: { data: any }) => {
+const CustomNode = memo(({ data, id }: { data: any, id: any }) => {
   return (
     <div
       className="px-4 py-2 rounded-lg border-2 shadow-md bg-white transition-all hover:shadow-lg"
@@ -30,7 +30,7 @@ const CustomNode = memo(({ data }: { data: any }) => {
       position={Position.Left}
       className="w-3 h-3 !bg-gray-400"
       />
-      <div className="font-semibold text-sm text-gray-800">{data.id}</div>
+      <div className="font-semibold text-sm text-gray-800">{id}</div>
 
       <Handle 
       type="source" 
@@ -46,25 +46,22 @@ const nodeTypes = {
 };
 
 export default function Network() {
-    const { nodes: networkNodes, edges: networkEdges, isConnected, clearNetwork } = useNetworkData();
+    const { nodes: networkNodes, edges: networkEdges, isConnected, clearNetwork, uniqueModules } = useNetworkData();
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
     const flowNodes = useMemo(() => {
-        return networkNodes.map((node: CustomNetworkNode, index: number) => {
-          const angle = (index / networkNodes.length) * 2 * Math.PI;
-          const radius = 300;
+        return networkNodes.map((node: any, index: number) => {
           
           const flowNode = {
             id: node.id,
             type: 'custom',
             position: {
-              x: 400 + radius * Math.cos(angle),
-              y: 300 + radius * Math.sin(angle),
+              x: node.layerXPos * 250 + 200,
+              y: index * 150,
             },
             data: {
               color: node.color || '#6366f1',
-              id: node.id,
             },
           };
           return flowNode;
@@ -81,12 +78,12 @@ export default function Network() {
           type: edge.type === 'grounded' ? 'step' : 'smoothstep',
           animated: edge.type === 'processed',
           style: {
-              stroke: edge.color || '#6366f1',
+              stroke: edge.color || '#10b981',
               strokeWidth: 2,
           },
           markerEnd: {
               type: MarkerType.ArrowClosed,
-              color: edge.color || '#6366f1',
+              color: edge.color || '#10b981',
           },
           label: edge.type === 'grounded' ? 'grounded' : undefined,
           labelStyle: { fontSize: 10, fill: '#666' },
@@ -126,7 +123,7 @@ export default function Network() {
             className="bg-white"
             />
         
-        <Panel position="top-right" className="bg-white rounded-lg shadow-md p-4 space-y-2">
+        <Panel position="top-left" className="bg-white rounded-lg shadow-md p-4 space-y-2">
             <div className="flex items-center gap-2">
                 <div 
                 className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
@@ -138,6 +135,26 @@ export default function Network() {
             
             <div className="text-xs text-gray-500">
               {networkNodes.length} nodes · {networkEdges.length} edges
+            </div>
+
+            <div className="mt-3 pt-3 border-t border-gray-200">
+                <div className="text-xs text-gray-600 space-y-1">
+                    {Array.from(uniqueModules).map(module => (
+                        <div key={module} className="flex items-center gap-2">
+                            <div 
+                                className="w-8 h-0.5" 
+                                style={{
+                                    backgroundColor: getModuleColor(module, 'previous')
+                                }}
+                            />
+                            <span>{module}</span>
+                        </div>
+                    ))}
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-0.5 bg-green-500 border-dashed" style={{borderTop: '2px dashed'}} />
+                        <span>Grounded</span>
+                    </div>
+                </div>
             </div>
           
             <button
