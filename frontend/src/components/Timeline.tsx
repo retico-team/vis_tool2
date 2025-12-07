@@ -228,6 +228,7 @@ export default function Timeline() {
                     </div>
                 </div>
 
+                {((uniqueModules?.size ?? 0) > 0) && (
                 <div className="mt-3 pt-3 border-t border-gray-200">
                     <div className="text-xs text-gray-600 space-y-1">
                         {Array.from(uniqueModules).map(module => (
@@ -235,7 +236,7 @@ export default function Timeline() {
                                 <div 
                                     className="w-8 h-0.5" 
                                     style={{
-                                        backgroundColor: getModuleColor(module, 'previous')
+                                        backgroundColor: getModuleColor(module, 'processed')
                                     }}
                                 />
                                 <span>{module}</span>
@@ -243,10 +244,11 @@ export default function Timeline() {
                         ))}
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-0.5 bg-green-500 border-dashed" style={{borderTop: '2px dashed'}} />
-                            <span>Grounded</span>
+                                <span>Grounded</span>
                         </div>
                     </div>
                 </div>
+                )}
 
                 <button
                 onClick={handleClear}

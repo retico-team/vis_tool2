@@ -1,25 +1,34 @@
 // TODO add enum for different types
 
 export const getModuleColor = (module: string, type: 'previous' | 'grounded' | 'processed' = 'previous'): string => {
-    // Hash function to generate a consistent number from a string
     const hashString = (str: string): number => {
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash; // Convert to 32-bit integer
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash = hash & hash;
         }
         return Math.abs(hash);
     };
 
-    // Generate HSL color from hash
-    const hash = hashString(module);
-    const hue = hash % 360;
-    
-    // Adjust saturation and lightness based on edge type
-    const saturation = type === 'previous' ? 70 : 60;
-    const lightness = type === 'previous' ? 50 : 45;
-    
+    let hash = hashString(module);
+
+    // Additional mixing step for better distribution
+    hash = hash ^ (hash >>> 16);
+    hash = Math.imul(hash, 2654435761); // Knuth's multiplicative hash
+    hash = hash ^ (hash >>> 16);
+
+    // Golden ratio conjugate for better color distribution
+    const goldenRatio = 1.61803398875;
+    const hue = ((Math.abs(hash) * goldenRatio) % 1) * 360;
+
+    const typeMap: Record<string, { s: number; l: number }> = {
+        previous: { s: 72, l: 50 },
+        grounded: { s: 62, l: 46 },
+        processed: { s: 52, l: 40 },
+    };
+
+    const { s: saturation, l: lightness } = typeMap[type] ?? typeMap.previous;
+
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
 

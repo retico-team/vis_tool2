@@ -116,6 +116,7 @@ export const useTimelineData = () => {
             edges: [],
             latestUpdate: null,
         });
+        setUniqueModules(new Set());
     }, []);
 
     useEffect(() => {

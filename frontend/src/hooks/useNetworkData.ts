@@ -124,6 +124,7 @@ export const useNetworkData = () => {
         setNetworkData({
             nodes: new Map(),
             edges: [],
+            uniqueModules: new Set<string>(),
         });
     }, []);
 

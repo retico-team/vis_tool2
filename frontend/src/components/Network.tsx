@@ -85,9 +85,6 @@ export default function Network() {
               type: MarkerType.ArrowClosed,
               color: edge.color || '#10b981',
           },
-          label: edge.type === 'grounded' ? 'grounded' : undefined,
-          labelStyle: { fontSize: 10, fill: '#666' },
-          labelBgStyle: { fill: 'white' },
         };
         return flowEdge;
       });
@@ -137,26 +134,23 @@ export default function Network() {
               {networkNodes.length} nodes · {networkEdges.length} edges
             </div>
 
-            <div className="mt-3 pt-3 border-t border-gray-200">
-                <div className="text-xs text-gray-600 space-y-1">
-                    {Array.from(uniqueModules).map(module => (
-                        <div key={module} className="flex items-center gap-2">
-                            <div 
-                                className="w-8 h-0.5" 
-                                style={{
-                                    backgroundColor: getModuleColor(module, 'previous')
-                                }}
-                            />
-                            <span>{module}</span>
-                        </div>
-                    ))}
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-0.5 bg-green-500 border-dashed" style={{borderTop: '2px dashed'}} />
-                        <span>Grounded</span>
-                    </div>
-                </div>
-            </div>
-          
+            {(uniqueModules?.size ?? 0)> 0 && (
+              <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="text-xs text-gray-600 space-y-1">
+                      {Array.from(uniqueModules).map(module => (
+                          <div key={module} className="flex items-center gap-2">
+                              <div 
+                                  className="w-8 h-0.5" 
+                                  style={{
+                                      backgroundColor: getModuleColor(module, 'processed')
+                                  }}
+                              />
+                              <span>{module}</span>
+                          </div>
+                      ))}
+                  </div>
+              </div>
+            )}
             <button
                 onClick={handleClear}
                 className="w-full px-3 py-1.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded transition-colors"
