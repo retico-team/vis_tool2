@@ -19,10 +19,3 @@ interface ModuleCategoryProps extends DefaultCardProps {
   type: ModuleTypes;
   modules: Module[];
 }
-
-interface updateTypeColors {
-  COMMIT: string;
-  ADD: string;
-  REVOKE: string;
-  MODULE: string;
-}

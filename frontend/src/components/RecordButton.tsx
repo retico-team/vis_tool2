@@ -4,36 +4,35 @@ import { api } from '@/services/api';
 import { API_CONFIG } from '@/config';
 
 export default function RecordButton({id, isLoading, setLoading, isRecording, setRecording, onToggle}: RecordButtonProps) {
-    const ENABLE_RUNNER_ENDPOINT = API_CONFIG.ENDPOINTS.ENABLE_RUNNER;
-    const DISABLE_RUNNER_ENDPOINT = API_CONFIG.ENDPOINTS.DISABLE_RUNNER;
-    
+  const ENABLE_RUNNER_ENDPOINT = API_CONFIG.ENDPOINTS.ENABLE_RUNNER;
+  const DISABLE_RUNNER_ENDPOINT = API_CONFIG.ENDPOINTS.DISABLE_RUNNER;
 
-    const handleToggle = async () => {
-        const newRecordingState = !isRecording;
-    
-        if (onToggle) {
-        onToggle(id, newRecordingState);
-        }
-        
-        setRecording(newRecordingState);
-        setLoading(true);
-        
-        try {
-            const endpoint = newRecordingState ? ENABLE_RUNNER_ENDPOINT : DISABLE_RUNNER_ENDPOINT;
-            const response = await api.post(endpoint);
-        }
-        catch (error) {
-            // Revert state on error
-            setRecording(!newRecordingState);
-            if (onToggle) {
-                onToggle(id, !newRecordingState);
-            }
-            console.error(error);
-        }
-        finally {
-            setLoading(false);
-        }
-    }
+  const handleToggle = async () => {
+      const newRecordingState = !isRecording;
+  
+      if (onToggle) {
+      onToggle(id, newRecordingState);
+      }
+      
+      setRecording(newRecordingState);
+      setLoading(true);
+      
+      try {
+          const endpoint = newRecordingState ? ENABLE_RUNNER_ENDPOINT : DISABLE_RUNNER_ENDPOINT;
+          const response = await api.post(endpoint);
+      }
+      catch (error) {
+          // Revert state on error
+          setRecording(!newRecordingState);
+          if (onToggle) {
+              onToggle(id, !newRecordingState);
+          }
+          console.error(error);
+      }
+      finally {
+          setLoading(false);
+      }
+  }
 
   return (
     <button

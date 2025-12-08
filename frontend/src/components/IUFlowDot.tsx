@@ -1,7 +1,8 @@
-import React from 'react';
 import { BaseEdge, getSmoothStepPath } from '@xyflow/react';
+import type { IUEdgeProps } from '@/types/allTypes';
+import { memo } from 'react';
 
-export function IUEdge({
+export const IUFlowDot = memo(({
     id,
     sourceX,
     sourceY,
@@ -15,8 +16,7 @@ export function IUEdge({
     labelStyle,
     labelBgStyle,
     data,
-    ...props
-}) {
+}: IUEdgeProps) => {
     const [edgePath, labelX, labelY] = getSmoothStepPath({
         sourceX,
         sourceY,
@@ -27,7 +27,6 @@ export function IUEdge({
     });
 
     const edgeColor = style?.stroke || '#b1b1b7';
-    // Default duration is 3 seconds, but can be customized per edge
     const duration = data?.age || 3;
 
     return (
@@ -73,4 +72,4 @@ export function IUEdge({
             )}
         </>
     );
-}
+});

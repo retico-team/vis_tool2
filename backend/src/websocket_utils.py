@@ -1,5 +1,4 @@
-from flask_socketio import SocketIO, emit
-from flask import current_app
+from flask_socketio import SocketIO
 
 class SocketManager:
     def __init__(self, app):

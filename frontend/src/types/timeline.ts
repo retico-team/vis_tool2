@@ -1,5 +1,4 @@
-import { DefaultButton } from '@/types/general';
-import { IUData } from '@/types/allTypes';
+import { DefaultButton, EdgeType } from '@/types/allTypes';
 
 interface RecordButtonProps extends Omit<DefaultButton, 'onClick'> {
     isRecording?: boolean;
@@ -12,26 +11,33 @@ interface TimelineNode {
     label: string;
     updateType: string;
     age: number;
-    nodeCount?: number;
     timeCreated: Date;
     module: string;
     previousNodeId?: string;
     groundedInNodeId?: string;
-    rawData: IUData;
     isGroundedNode?: boolean;
+    isLatest?: boolean;
+    isModule?: boolean;
 }
 
 interface TimelineEdge {
     id: string;
     source: string;
     target: string;
-    type: 'previous' | 'grounded';
+    type: EdgeType;
     groundedExists?: boolean;
     module: string;
 }
 
-interface TimelineData {
+interface TimelineFlowData {
     nodes: Map<string, TimelineNode>;
     edges: TimelineEdge[];
     latestUpdate: TimelineNode | null;
+}
+
+interface updateTypeColors {
+    COMMIT: string;
+    ADD: string;
+    REVOKE: string;
+    MODULE: string;
 }

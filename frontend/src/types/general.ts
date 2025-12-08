@@ -1,5 +1,7 @@
 import type { HTMLAttributes } from "react";
 
+type EdgeType = 'previous' | 'processed' | 'grounded';
+
 interface DefaultCardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onToggle'> {
     onToggle?: (id: string) => void;
 }
@@ -9,10 +11,4 @@ interface DefaultButtonProps extends Omit<HTMLAttributes<HTMLButtonElement>, 'on
     isLoading: boolean;
     setLoading: (value: boolean) => void;
     onClick?: (id: string) => void;
-}
-
-const edgeTypes = {
-    PREVIOUS: 'previous',
-    GROUNDED: 'grounded',
-    PROCESSED: 'processed',
 }

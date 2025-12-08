@@ -1,5 +1,3 @@
-// TODO add enum for different types
-
 export const getModuleColor = (module: string, type: 'previous' | 'grounded' | 'processed' = 'previous'): string => {
     const hashString = (str: string): number => {
         let hash = 0;

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, memo, useCallback } from 'react';
+import { useEffect, useMemo, memo, useCallback } from 'react';
 import ReactFlow, {
     Controls,
     Background,
@@ -12,65 +12,16 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { useTimelineData } from '@/hooks/useTimelineData';
 import { getModuleColor, scaleIU } from '@/utils/TimelineUtils';
-import { IUEdge } from '@/components/IUEdge';
-import type { updateTypeColors } from '@/types/allTypes';
-
-const CustomNode = memo(({ data }) => {
-    const updateTypeColors: updateTypeColors = {
-        COMMIT: 'bg-green-500',
-        ADD: 'bg-blue-500',
-        REVOKE: 'bg-red-500',
-        MODULE: 'bg-violet-500'
-    };
-
-    const isLatest = data.isLatest;
-    const isModule = data.isModule;
-
-    return (
-        <div
-            className={`px-4 py-3 rounded-lg border-2 shadow-lg transition-all duration-300 ${
-                isLatest ? 'border-yellow-400 ring-4 ring-yellow-200 scale-110' : 'border-gray-300'
-            } bg-white`}
-        >
-            {/* Add target handle on the left */}
-            <Handle 
-                type="target" 
-                position={Position.Left}
-                className="w-3 h-3 !bg-gray-400"
-            />
-            
-            <div className="flex items-center gap-2 mb-1">
-                <div className={`w-3 h-3 rounded-full ${updateTypeColors[data.updateType] || 'bg-gray-500'}`} />
-                <div className="font-semibold text-sm text-gray-800">{data.label}</div>
-            </div>
-            {isModule ? (
-                <div className="text-xs text-gray-600">
-                    <div>{data.timeCreated}</div>
-                </div>
-            ) : (
-                <div className="text-xs text-gray-600">
-                    <div>{data.updateType}</div>
-                    <div>Age: {data.age}</div>
-                </div> )}
-            
-            {/* Add source handle on the right */}
-            <Handle 
-                type="source" 
-                position={Position.Right}
-                className="w-3 h-3 !bg-gray-400"
-            />
-        </div>
-    );
-});
-
-CustomNode.displayName = 'CustomNode';
+import { IUFlowDot } from '@/components/IUFlowDot';
+import { TimelineFlowNode } from '@/components/TimelineFlowNode';
+import type { TimelineNode, TimelineEdge } from '@/types/allTypes';
 
 const nodeTypes = {
-    custom: CustomNode,
+    custom: TimelineFlowNode,
 };
 
 const edgeTypes = {
-    animatedEdge: IUEdge,
+    animatedEdge: IUFlowDot,
 };
 
 export default function Timeline() {
@@ -78,9 +29,8 @@ export default function Timeline() {
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
-    // Memoize flow nodes conversion
     const flowNodes = useMemo(() => {
-        return timelineNodes.flatMap((node, index) => {
+        return timelineNodes.flatMap((node: TimelineNode, index: number) => {
             let y;
             
             if (node.isGroundedNode) {
@@ -104,8 +54,6 @@ export default function Timeline() {
                     isLatest: latestUpdate?.id === node.id,
                     isModule: false
                 },
-                sourcePosition: Position.Right,
-                targetPosition: Position.Left,
             };
 
             const moduleNode = {
@@ -127,9 +75,8 @@ export default function Timeline() {
         });
     }, [timelineNodes]);
 
-    // Convert timeline edges to ReactFlow edges
     const flowEdges = useMemo(() => {
-        return timelineEdges.map((edge) => {
+        return timelineEdges.map((edge: TimelineEdge) => {
             const isPrevious = edge.type === 'previous';
             
             return {
@@ -164,12 +111,10 @@ export default function Timeline() {
         });
     }, [timelineEdges]);
 
-    // Update nodes when flowNodes changes
     useEffect(() => {
         setNodes(flowNodes);
     }, [flowNodes, setNodes]);
 
-    // Update edges when flowEdges changes
     useEffect(() => {
         setEdges(flowEdges);
     }, [flowEdges, setEdges]);

@@ -12,18 +12,16 @@ export const useTimelineData = () => {
         latestUpdate: null,
     });
 
-    const addNode = useCallback((data) => {
+    const addNode = useCallback((data: IUData) => {
         const node: TimelineNode = {
             id: data.IUID,
             label: data.IU,
             updateType: data.UpdateType,
             age: data.Age,
             module: data.Module,
-            nodeCount: Number(data.IUID.split(":").pop()),
             timeCreated: new Date(parseFloat(data.TimeCreated) * 1000),
             previousNodeId: data.PreviousIUID,
             groundedInNodeId: data.GroundedIn.IUID,
-            rawData: data,
             isGroundedNode: false,
         };
 
@@ -40,7 +38,7 @@ export const useTimelineData = () => {
             isGroundedNode: true
         }
 
-        setTimelineData((prev) => {
+        setTimelineData((prev: TimelineData) => {
             const newNodes = new Map(prev.nodes);
             const existingNode = prev.nodes.get(node.id);
             const existingGroundedInNode = prev.nodes.get(groundedInNode.id)
@@ -50,7 +48,7 @@ export const useTimelineData = () => {
                 newNodes.set(groundedInNode.id, groundedInNode);
             }
 
-            // Node exists, update its data (important for ADD -> COMMIT transitions)
+            // Node exists, update its data (ADD -> COMMIT transitions)
             if (existingNode) {
                 newNodes.set(node.id, node);
                 
@@ -80,13 +78,10 @@ export const useTimelineData = () => {
             }
 
             // Add edge from grounded node if it exists and is different from previous
-            if (
-                groundedInNode && 
-                groundedInNode.id !== node.previousNodeId
-            ) {
+            if (groundedInNode && groundedInNode.id !== node.previousNodeId) {
                 const edgeId = `${groundedInNode.id}~>${node.id}`;
-                const existingEdge = newEdges.find((e) =>
-                    e.id === edgeId || (e.source === groundedInNode.id && e.groundedExists === true && e.module === node.module));
+                const existingEdge = newEdges.find((e) => 
+                    e.id === edgeId || (e.source === groundedInNode.id));
                 if (!existingEdge) {
                     newEdges.push({
                         id: edgeId,
@@ -122,7 +117,7 @@ export const useTimelineData = () => {
     useEffect(() => {
         if (!socket) return;
 
-        const handleData = (data) => {
+        const handleData = (data: IUData) => {
             console.log('Timeline data received:', data);
             addNode(data);
         };

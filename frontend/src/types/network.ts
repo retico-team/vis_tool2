@@ -1,23 +1,33 @@
+import type { EdgeType } from "@/types/allTypes";
+
 interface NetworkNode {
     id: string;
-    groundedInModule?: string;
-    isGroundedNode: boolean;
-    processedModules?: string[];
-    color?: string;
-    position: number;
+    layerXPos: number;
+    color: string;
 }
 
 interface NetworkEdge {
     id: string;
     source: string;
     target: string;
+    type: EdgeType;
+    color: string;
+}
+
+interface NetworkList {
+    current_mod: string;
+    next_mods: string[];
+    previous_mods: string[];
 }
 
 interface NetworkFlowData {
     nodes: Map<string, NetworkNode>;
     edges: NetworkEdge[];
+    uniqueModules: Set<string>;
 }
 
 interface NetworkData {
-    // to be filled out
+    networkList: Map<string, NetworkList>;
+    modules: string[];
+    connections: { From: string; To: string }[];
 }

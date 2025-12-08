@@ -24,7 +24,7 @@ async function apiCall<T = any>(
   endpoint: string,
   options?: ApiConfig
 ): Promise<T> {
-  const { timeout = 30000, ...fetchOptions } = options || {};
+  const { timeout = 120000, ...fetchOptions } = options || {};
   
   // Create abort controller for timeout
   const controller = new AbortController();

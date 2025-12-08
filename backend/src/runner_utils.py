@@ -7,7 +7,7 @@ class RunnerController:
         self.stop_event = threading.Event()
         self.runner_thread = None
         self.initialized = threading.Event()
-        self.timeout = 30
+        self.timeout = 180
         self.sio = None
     
     def runner(self):
@@ -73,7 +73,7 @@ class RunnerController:
         
     
     def start(self):
-        if self.runner_thread is None or not self.runner_thread.is_alive():
+        if not self.is_running():
             self.initialized.clear()
             self.stop_event.clear()
             self.runner_thread = threading.Thread(target=self.runner, daemon=True, name="RunnerController")

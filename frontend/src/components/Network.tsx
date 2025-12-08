@@ -13,10 +13,10 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useNetworkData } from '@/hooks/useNetworkData';
-import type { NetworkNode as CustomNetworkNode } from '@/types/allTypes';
-import { getModuleColor } from '../utils/TimelineUtils';
+import type { NetworkNode, NetworkEdge } from '@/types/allTypes';
+import { getModuleColor } from '@/utils/TimelineUtils';
 
-const CustomNode = memo(({ data, id }: { data: any, id: any }) => {
+const CustomNode = memo(({ data, id }: { data: NetworkNode, id: string }) => {
   return (
     <div
       className="px-4 py-2 rounded-lg border-2 shadow-md bg-white transition-all hover:shadow-lg"
@@ -46,14 +46,14 @@ const nodeTypes = {
 };
 
 export default function Network() {
-    const { nodes: networkNodes, edges: networkEdges, isConnected, clearNetwork, uniqueModules } = useNetworkData();
+    const { nodes: networkNodes, edges: networkEdges, isConnected, clearNetwork, uniqueModules }: ReturnType<typeof useNetworkData> = useNetworkData();
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
     const flowNodes = useMemo(() => {
-        return networkNodes.map((node: any, index: number) => {
+        return networkNodes.map((node: NetworkNode, index: number) => {
           
-          const flowNode = {
+          const flowNode: ReactFlow.Node<NetworkNode> = {
             id: node.id,
             type: 'custom',
             position: {
@@ -69,9 +69,9 @@ export default function Network() {
     }, [networkNodes]);
 
     const flowEdges = useMemo(() => {
-      return networkEdges.map((edge) => {
+      return networkEdges.map((edge: NetworkEdge) => {
 
-        const flowEdge = {
+        const flowEdge: ReactFlow.Edge<NetworkEdge> = {
           id: edge.id,
           source: edge.source,
           target: edge.target,
@@ -134,10 +134,10 @@ export default function Network() {
               {networkNodes.length} nodes · {networkEdges.length} edges
             </div>
 
-            {(uniqueModules?.size ?? 0)> 0 && (
+            {(uniqueModules?.size ?? 0) > 0 && (
               <div className="mt-3 pt-3 border-t border-gray-200">
                   <div className="text-xs text-gray-600 space-y-1">
-                      {Array.from(uniqueModules).map(module => (
+                      {Array.from(uniqueModules).map((module) => (
                           <div key={module} className="flex items-center gap-2">
                               <div 
                                   className="w-8 h-0.5" 
