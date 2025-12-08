@@ -1,9 +1,8 @@
 import { DefaultButton, EdgeType } from '@/types/allTypes';
 
-interface RecordButtonProps extends Omit<DefaultButton, 'onClick'> {
-    isRecording?: boolean;
-    setRecording?: (value: boolean) => void;
-    onClick?: (id: string, isRecording: boolean) => void;
+interface RecordButtonProps {
+    id: string;
+    onToggle?: (id: string, isRecording: boolean) => void;
 }
 
 interface TimelineNode {

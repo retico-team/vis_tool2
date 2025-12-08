@@ -1,19 +1,17 @@
-import { useEffect, useMemo, memo, useCallback } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import ReactFlow, {
     Controls,
     Background,
     useNodesState,
     useEdgesState,
     MarkerType,
-    Position,
-    Handle,
     Panel
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { useTimelineData } from '@/hooks/useTimelineData';
+import useTimelineData from '@/hooks/useTimelineData';
 import { getModuleColor, scaleIU } from '@/utils/TimelineUtils';
-import { IUFlowDot } from '@/components/IUFlowDot';
-import { TimelineFlowNode } from '@/components/TimelineFlowNode';
+import IUFlowDot from '@/components/IUFlowDot';
+import TimelineFlowNode from '@/components/TimelineFlowNode';
 import type { TimelineNode, TimelineEdge } from '@/types/allTypes';
 
 const nodeTypes = {
@@ -24,7 +22,7 @@ const edgeTypes = {
     animatedEdge: IUFlowDot,
 };
 
-export default function Timeline() {
+function Timeline() {
     const { nodes: timelineNodes, edges: timelineEdges, latestUpdate, isConnected, clearTimeline, uniqueModules } = useTimelineData();
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -205,3 +203,5 @@ export default function Timeline() {
         </div>
     );
 }
+
+export default Timeline;

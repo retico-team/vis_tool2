@@ -2,7 +2,7 @@ import { BaseEdge, getSmoothStepPath } from '@xyflow/react';
 import type { IUEdgeProps } from '@/types/allTypes';
 import { memo } from 'react';
 
-export const IUFlowDot = memo(({
+const IUFlowDot = memo(({
     id,
     sourceX,
     sourceY,
@@ -73,3 +73,5 @@ export const IUFlowDot = memo(({
         </>
     );
 });
+
+export default IUFlowDot;

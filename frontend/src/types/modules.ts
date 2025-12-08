@@ -1,4 +1,4 @@
-import type { DefaultButtonProps } from '@/types/general';
+import type { DefaultCardProps } from '@/types/allTypes';
 
 type ModuleTypes = "Producing Modules" | "Consuming Modules" | "Trigger Modules";
 

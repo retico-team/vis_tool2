@@ -7,3 +7,5 @@ export type * from '@/types/socket';
 export type * from '@/types/iu';
 export type * from '@/types/timeline';
 export type * from '@/types/network';
+export type * from '@/types/api';
+export type * from '@/types/navbar';

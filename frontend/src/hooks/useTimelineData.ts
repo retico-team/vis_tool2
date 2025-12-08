@@ -3,7 +3,7 @@ import { useSocketContext } from "@/contexts/SocketContext";
 import { getModuleColor } from "@/utils/TimelineUtils";
 import type { TimelineData, IUData, TimelineNode } from "@/types/allTypes";
 
-export const useTimelineData = () => {
+const useTimelineData = () => {
     const { socket, isConnected } = useSocketContext();
     const [uniqueModules, setUniqueModules] = useState<Set<string>>(new Set());
     const [timelineData, setTimelineData] = useState<TimelineData>({
@@ -140,3 +140,5 @@ export const useTimelineData = () => {
         uniqueModules,
     };
 };
+
+export default useTimelineData;

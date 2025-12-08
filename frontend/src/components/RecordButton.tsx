@@ -1,37 +1,40 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import type { RecordButtonProps } from '@/types/allTypes';
 import { api } from '@/services/api';
 import { API_CONFIG } from '@/config';
 
-export default function RecordButton({id, isLoading, setLoading, isRecording, setRecording, onToggle}: RecordButtonProps) {
+function RecordButton({ id, onToggle }: RecordButtonProps) {
+  const [isRecording, setRecording] = useState(false);
+  const [isLoading, setLoading] = useState(false);
+  
   const ENABLE_RUNNER_ENDPOINT = API_CONFIG.ENDPOINTS.ENABLE_RUNNER;
   const DISABLE_RUNNER_ENDPOINT = API_CONFIG.ENDPOINTS.DISABLE_RUNNER;
 
   const handleToggle = async () => {
-      const newRecordingState = !isRecording;
-  
-      if (onToggle) {
+    const newRecordingState = !isRecording;
+    
+    setRecording(newRecordingState);
+    setLoading(true);
+    
+    if (onToggle) {
       onToggle(id, newRecordingState);
+    }
+    
+    try {
+      const endpoint = newRecordingState ? ENABLE_RUNNER_ENDPOINT : DISABLE_RUNNER_ENDPOINT;
+      const response = await api.post(endpoint);
+    }
+    catch (error) {
+      // Revert state on error
+      setRecording(!newRecordingState);
+      if (onToggle) {
+        onToggle(id, !newRecordingState);
       }
-      
-      setRecording(newRecordingState);
-      setLoading(true);
-      
-      try {
-          const endpoint = newRecordingState ? ENABLE_RUNNER_ENDPOINT : DISABLE_RUNNER_ENDPOINT;
-          const response = await api.post(endpoint);
-      }
-      catch (error) {
-          // Revert state on error
-          setRecording(!newRecordingState);
-          if (onToggle) {
-              onToggle(id, !newRecordingState);
-          }
-          console.error(error);
-      }
-      finally {
-          setLoading(false);
-      }
+      console.error(error);
+    }
+    finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -49,7 +52,6 @@ export default function RecordButton({id, isLoading, setLoading, isRecording, se
         ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
       `}
     >
-      {/* Record/Stop Icon */}
       <span
         className={`
           w-3 h-3 rounded-full transition-all
@@ -58,10 +60,11 @@ export default function RecordButton({id, isLoading, setLoading, isRecording, se
         `}
       />
 
-      {/* Button Text */}
       <span>
         {isLoading ? 'Processing...' : isRecording ? 'Stop' : 'Record'}
       </span>
     </button>
   );
 }
+
+export default RecordButton;

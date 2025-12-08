@@ -2,7 +2,7 @@ import { memo } from "react";
 import { Position, Handle } from "reactflow";
 import type { TimelineNode, updateTypeColors } from "@/types/allTypes";
 
-export const TimelineFlowNode = memo(({ data }: { data: TimelineNode }) => {
+const TimelineFlowNode = memo(({ data }: { data: TimelineNode }) => {
     const updateTypeColors: updateTypeColors = {
         COMMIT: 'bg-green-500',
         ADD: 'bg-blue-500',
@@ -49,3 +49,5 @@ export const TimelineFlowNode = memo(({ data }: { data: TimelineNode }) => {
         </div>
     );
 });
+
+export default TimelineFlowNode;

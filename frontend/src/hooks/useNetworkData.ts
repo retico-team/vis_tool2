@@ -3,7 +3,7 @@ import { useSocketContext } from "@/contexts/SocketContext";
 import { getModuleColor } from "@/utils/TimelineUtils";
 import type { NetworkData, NetworkFlowData, NetworkList } from "@/types/allTypes";
 
-export const useNetworkData = () => {
+const useNetworkData = () => {
     const { socket, isConnected } = useSocketContext();
     const [networkData, setNetworkData] = useState<NetworkFlowData>({
         nodes: new Map(),
@@ -149,3 +149,5 @@ export const useNetworkData = () => {
         uniqueModules: networkData.uniqueModules,
     };
 };
+
+export default useNetworkData;
