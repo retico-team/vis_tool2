@@ -90,6 +90,7 @@ export const useTimelineData = () => {
                         type: 'grounded',
                         groundedExists: true,
                         module: node.module,
+                        color: getModuleColor(groundedInNode.module, 'grounded'),
                         age: groundedInNode.age
                     });
                 }

@@ -135,8 +135,8 @@ export default function Timeline() {
                 fitView
                 className="bg-gray-50"
             >
-                <Background color="#ddd" gap={16} />
-                <Controls className="bg-white rounded-lg shadow-lg" />
+            <Background color="#ddd" gap={16} />
+            <Controls className="bg-white rounded-lg shadow-lg" />
             <Panel position="top-left" className="bg-white rounded-lg shadow-md p-4 space-y-2">
                 <div className="flex items-center gap-2">
                     <div 
@@ -168,8 +168,7 @@ export default function Timeline() {
 
                 <div className="mt-3 pt-3 border-t border-gray-200">
                     <div className="text-xs text-gray-600">
-                        <div>Nodes: {timelineNodes.length}</div>
-                        <div>Edges: {timelineEdges.length}</div>
+                        {timelineNodes.length} nodes · {timelineEdges.length} edges
                     </div>
                 </div>
 

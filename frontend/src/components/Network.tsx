@@ -103,7 +103,7 @@ export default function Network() {
     }, [clearNetwork]);
 
   return (
-    <div className="w-full h-screen bg-gray-50">
+    <div className="w-full h-full bg-gray-50">
         <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -111,14 +111,14 @@ export default function Network() {
             onEdgesChange={onEdgesChange}
             nodeTypes={nodeTypes}
             fitView
-            attributionPosition="bottom-left"
+            attributionPosition="bottom-right"
         >
-            <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
-            <Controls />
-            <MiniMap 
-            nodeColor={(node) => node.data.color || '#6366f1'}
-            className="bg-white"
-            />
+        <Background color="#ddd" gap={16} />
+        <Controls className="bg-white rounded-lg shadow-lg" />
+        <MiniMap 
+        nodeColor={(node) => node.data.color || '#6366f1'}
+        className="bg-white"
+        />
         
         <Panel position="top-left" className="bg-white rounded-lg shadow-md p-4 space-y-2">
             <div className="flex items-center gap-2">
@@ -142,7 +142,7 @@ export default function Network() {
                               <div 
                                   className="w-8 h-0.5" 
                                   style={{
-                                      backgroundColor: getModuleColor(module, 'processed')
+                                      backgroundColor: getModuleColor(module, 'previous')
                                   }}
                               />
                               <span>{module}</span>

@@ -1,4 +1,6 @@
-export const getModuleColor = (module: string, type: 'previous' | 'grounded' | 'processed' = 'previous'): string => {
+import type { TimelineEdge, EdgeType } from "@/types/allTypes";
+
+export const getModuleColor = (module: string, type: EdgeType): string => {
     const hashString = (str: string): number => {
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
@@ -22,7 +24,6 @@ export const getModuleColor = (module: string, type: 'previous' | 'grounded' | '
     const typeMap: Record<string, { s: number; l: number }> = {
         previous: { s: 72, l: 50 },
         grounded: { s: 62, l: 46 },
-        processed: { s: 52, l: 40 },
     };
 
     const { s: saturation, l: lightness } = typeMap[type] ?? typeMap.previous;
@@ -30,7 +31,7 @@ export const getModuleColor = (module: string, type: 'previous' | 'grounded' | '
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
 
-export const scaleIU = (isPrevious: boolean, edge) => {
+export const scaleIU = (isPrevious: boolean, edge: TimelineEdge): number => {
     if (isPrevious && edge.age < 0.001) {
         return edge.age * 10000;
     }

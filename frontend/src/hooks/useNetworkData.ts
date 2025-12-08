@@ -89,7 +89,7 @@ export const useNetworkData = () => {
                         newNodes.set(module.current_mod, {
                             id: module.current_mod,
                             layerXPos: layerIndex,
-                            color: getModuleColor(module.current_mod, 'processed'),
+                            color: getModuleColor(module.current_mod, 'previous'),
                         });
                     }
                 });
@@ -104,7 +104,7 @@ export const useNetworkData = () => {
                             source: conn.From,
                             target: conn.To,
                             type: 'processed',
-                            color: getModuleColor(conn.From, 'processed'),
+                            color: getModuleColor(conn.From, 'previous'),
                         }
                     );
                 }

@@ -58,8 +58,14 @@ export default function Navbar() {
           </div>
           
           <div className={activeTab === 'Network' ? 'block' : 'hidden'}>
-            <div className="h-[calc(100vh-8rem)]">
-              <Network />
+            <div className="flex flex-col h-[calc(100vh-12rem)]">
+              <div className="bg-white rounded-t-lg shadow px-6 py-4 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-800">Network</h2>
+              </div>
+
+              <div className="flex-1 bg-white rounded-b-lg shadow overflow-hidden">
+                <Network />
+              </div>
             </div>
           </div>
         </div>

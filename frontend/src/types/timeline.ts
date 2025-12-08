@@ -27,6 +27,7 @@ interface TimelineEdge {
     type: EdgeType;
     groundedExists?: boolean;
     module: string;
+    age: number;
 }
 
 interface TimelineFlowData {

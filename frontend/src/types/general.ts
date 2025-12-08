@@ -1,6 +1,6 @@
 import type { HTMLAttributes } from "react";
 
-type EdgeType = 'previous' | 'processed' | 'grounded';
+type EdgeType = 'previous' | 'grounded';
 
 interface DefaultCardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onToggle'> {
     onToggle?: (id: string) => void;
