@@ -1,6 +1,5 @@
 export type * from '@/types/modules';
 export type * from '@/types/timeline';
-export type * from '@/types/visualizer';
 export type * from '@/types/general';
 export type * from '@/types/timeline';
 export type * from '@/types/socket';

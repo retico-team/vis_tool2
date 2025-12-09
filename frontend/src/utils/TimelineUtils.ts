@@ -1,6 +1,6 @@
 import type { TimelineEdge, EdgeType } from "@/types/allTypes";
 
-export const getModuleColor = (module: string, type: EdgeType): string => {
+const getModuleColor = (module: string, type: EdgeType): string => {
     const hashString = (str: string): number => {
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
@@ -31,7 +31,7 @@ export const getModuleColor = (module: string, type: EdgeType): string => {
     return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
 
-export const scaleIU = (isPrevious: boolean, edge: TimelineEdge): number => {
+const scaleIU = (isPrevious: boolean, edge: TimelineEdge): number => {
     if (isPrevious && edge.age < 0.001) {
         return edge.age * 10000;
     }
@@ -40,3 +40,5 @@ export const scaleIU = (isPrevious: boolean, edge: TimelineEdge): number => {
     }
     return edge.age;
 };
+
+export { getModuleColor, scaleIU };

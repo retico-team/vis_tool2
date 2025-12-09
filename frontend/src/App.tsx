@@ -1,4 +1,3 @@
-import React from 'react';
 import { useState } from 'react';
 import { SocketProvider } from './contexts/SocketContext';
 import Navbar from '@/components/NavBar';
@@ -31,7 +30,7 @@ const App = () => {
             <div className={activeTab === 'Network' ? 'block' : 'hidden'}>
               <NetworkPage />
             </div>
-            
+
           </div>
         </div>
       </div>

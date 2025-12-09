@@ -9,6 +9,7 @@ import os, sys
 
 app = Flask(__name__)
 DEFAULT_PORT = 5000
+CLIENT_PORT = 5173
 
 app.config.from_object(Config)
 Config.configure_paths()
@@ -17,7 +18,7 @@ socket_manager = SocketManager(app=app)
 socket_manager.configure_socket()
 
 controller.configure_socket(sio=socket_manager.get_sio())
-CORS(app)
+CORS(app, resources={r"/*": {"origins": f"http://localhost:{CLIENT_PORT}"}})
 
 app.register_blueprint(timeline_tab)
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSocketContext } from "@/contexts/SocketContext";
 import { getModuleColor } from "@/utils/TimelineUtils";
 import type { NetworkData, NetworkFlowData, NetworkList } from "@/types/allTypes";
