@@ -2,6 +2,7 @@ import os
 import sys
 
 class Config:
+    # IMPORTANT: update this path to where your retico modules are located
     RETICO_BASE_PATH = 'C:/Users/jason/retico/'
     RETICO_MODULES = [
         'retico-googleasr',
@@ -9,7 +10,8 @@ class Config:
         'retico-whisperasr',
         'retico-wav2vecasr',
         'retico-zmq',
-        'retico-vision'
+        'retico-vision',
+        'retico-huggingfacelm',
     ]
     
     @staticmethod
