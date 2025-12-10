@@ -1,3 +1,9 @@
+### Installation
+
+[![Youtube link to Retico Visual Tool Video](https://img.youtube.com/vi/ZoOLo9lukLQ/0.jpg)](https://www.youtube.com/watch?v=ZoOLo9lukLQ)
+
+
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
