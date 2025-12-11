@@ -1,9 +1,9 @@
 import os
 import sys
+from pathlib import Path
 
 class Config:
-    # IMPORTANT: update this path to where your retico modules are located
-    RETICO_BASE_PATH = 'C:/Users/jason/retico/'
+    RETICO_BASE_PATH = Path.cwd().parents[2]
     RETICO_MODULES = [
         'retico-googleasr',
         'retico-core',
