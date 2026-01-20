@@ -130,6 +130,7 @@ const useNetworkData = () => {
         if (!socket) return;
 
         const handleData = (data: NetworkData) => {
+            console.log('Network data received:', data);
             addNode(data);
         };
 

@@ -1,2 +1,0 @@
-Flask-SocketIO
-google-cloud-speech~=2.15

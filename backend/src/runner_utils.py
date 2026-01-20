@@ -1,5 +1,8 @@
 import threading
 import time
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer, TextIteratorStreamer
+from configure_env import config
 
 class RunnerController:
     def __init__(self):
@@ -10,21 +13,14 @@ class RunnerController:
         self.sio = None
     
     def runner(self):
-        import retico_core
-        from retico_core.debug import DebugModule, LoggerModule
-        from retico_whisperasr.whisperasr import WhisperASRModule
-        from retico_googleasr.googleasr import GoogleASRModule
-        from retico_zmq.zmq import WriterSingleton, ZeroMQWriter, ReaderSingleton
-        from retico_core.audio import MicrophoneModule
-        from retico_wav2vecasr.wav2vecasr import Wav2VecASRModule
-        
+        config.import_all_classes()
         
         microphone = MicrophoneModule()
-        # gasr = GoogleASRModule()
         asr = WhisperASRModule(language="english")
         logger = LoggerModule(sio=self.sio, route='data')
         debug = DebugModule()
         wav2vec_asr = Wav2VecASRModule()
+        # gasr = GoogleASRModule()
 
         ip = '127.0.0.1'
         WriterSingleton(ip=ip, port='12345')
@@ -35,6 +31,7 @@ class RunnerController:
         microphone.subscribe(asr)
         microphone.subscribe(wav2vec_asr)
         # microphone.subscribe(gasr)
+        
         wav2vec_asr.subscribe(zmqwriter)
         asr.subscribe(zmqwriter)
         # gasr.subscribe(zmqwriter)
@@ -42,10 +39,11 @@ class RunnerController:
         # reader.subscribe(debug)
         # reader.subscribe(logger)
         
-        # gasr.subscribe(logger)
+        # gasr.subscribe(debug)
         asr.subscribe(debug)
         wav2vec_asr.subscribe(debug)
         
+        # gasr.subscribe(logger)
         asr.subscribe(logger)
         wav2vec_asr.subscribe(logger)
 
@@ -72,14 +70,7 @@ class RunnerController:
         debug.stop()
         
     def runner2(self):
-        import torch
-        from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer, TextIteratorStreamer
-        from retico_core.debug import DebugModule, LoggerModule
-        from retico_core.audio import MicrophoneModule
-        from retico_core.text import TextIU, SpeechRecognitionIU
-        from retico_whisperasr.whisperasr import WhisperASRModule
-        from retico_huggingfacelm.huggingface_lm import HuggingfaceLM
-        from retico_zmq.zmq import WriterSingleton, ZeroMQWriter, ReaderSingleton
+        config.import_all_classes()
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -163,5 +154,5 @@ class RunnerController:
     def configure_socket(self, sio):
         self.sio = sio
         
-    
+
 controller = RunnerController()
