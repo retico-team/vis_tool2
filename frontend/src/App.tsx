@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { SocketProvider } from './contexts/SocketContext';
 import Navbar from '@/components/NavBar';
-import ModuleSelectionPage from '@/pages/ModuleSelectionPage';
 import TimelinePage from '@/pages/TimelinePage';
 import NetworkPage from '@/pages/NetworkPage';
+import ModuleSelectionPage from '@/pages/ModuleSelectionPage';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('Module Selection');

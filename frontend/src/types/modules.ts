@@ -19,3 +19,13 @@ interface ModuleCategoryProps extends DefaultCardProps {
   type: ModuleTypes;
   modules: Module[];
 }
+
+interface ModuleData {
+    name: string;
+    base_class: string;
+    params: string[];
+}
+
+interface ModulesMap {
+    [moduleName: string]: ModuleData;
+}

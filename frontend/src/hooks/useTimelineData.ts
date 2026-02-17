@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSocketContext } from "@/contexts/SocketContext";
 import { getModuleColor } from "@/utils/TimelineUtils";
-import type { TimelineData, IUData, TimelineNode } from "@/types/allTypes";
+import type { TimelineData, IUData } from "@/types/allTypes";
 
 const useTimelineData = () => {
     const { socket, isConnected } = useSocketContext();
@@ -13,21 +13,21 @@ const useTimelineData = () => {
     });
 
     const addNode = useCallback((data: IUData) => {
-        const node: TimelineNode = {
+        const { GroundedIn: groundedInData, PreviousIUID: previousIU } = data;
+        
+        const node = {
             id: data.IUID,
             label: data.IU,
             updateType: data.UpdateType,
             age: data.Age,
             module: data.Module,
             timeCreated: new Date(parseFloat(data.TimeCreated) * 1000),
-            previousNodeId: data.PreviousIUID,
-            groundedInNodeId: data.GroundedIn.IUID,
+            previousNodeId: previousIU ?? null,
+            groundedInNodeId: groundedInData?.IUID ?? null,
             isGroundedNode: false,
         };
 
-        const groundedInData = data.GroundedIn;
-
-        const groundedInNode: TimelineNode = {
+        const groundedInNode = groundedInData ? {
             id: groundedInData.IUID,
             label: groundedInData.Module.split(" ")[0] + " Stream",
             module: groundedInData.Module,
@@ -36,13 +36,17 @@ const useTimelineData = () => {
             timeCreated: new Date(parseFloat(groundedInData.TimeCreated) * 1000),
             rawData: groundedInData,
             isGroundedNode: true
-        }
+        } : null;
 
         setTimelineData((prev: TimelineData) => {
             const newNodes = new Map(prev.nodes);
-            const existingNode = prev.nodes.get(node.id);
-            const existingGroundedInNode = prev.nodes.get(groundedInNode.id)
             const newEdges = [...prev.edges];
+            const existingNode = prev.nodes.get(node.id);
+            let existingGroundedInNode = true;
+
+            if (groundedInNode) {
+                existingGroundedInNode = prev.nodes.get(groundedInNode.id)
+            }
 
             if (!existingGroundedInNode) {
                 newNodes.set(groundedInNode.id, groundedInNode);
