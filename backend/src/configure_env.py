@@ -1,38 +1,24 @@
 import os
 import sys
 from pathlib import Path
+from module import Module
 import importlib
 import pkgutil
 import inspect
+import json
 
 class Config:    
     def __init__(self):
         self.RETICO_BASE_PATH = Path.cwd().parents[2]
         self.RETICO_MODULES = set(dir.name for dir in self.RETICO_BASE_PATH.iterdir() if dir.is_dir() and dir.name.startswith('retico-'))
-        self.RESTRICTED_MODULES = ['IncrementalUnit', 'object', 'Queue', 'Enum']
+        self.RESTRICTED_MODULES = ['object', 'queue', 'enum']
         self.all_modules = dict()
         self.all_classes = dict()
-        self.all_base_classes = dict()
+        self.modules_with_params = dict()
         self._configure_env()
-    
-    def get_all_valid_base_classes(self):
-        """Return all valid imported classes with base classes from retico modules"""
-        for name, class_obj in self.all_classes.items():
-            base_class = inspect.getmro(class_obj)[-2].__name__ if len(inspect.getmro(class_obj)) > 2 else inspect.getmro(class_obj)[-1].__name__
-            
-            if base_class in self.RESTRICTED_MODULES:
-                continue
-            else:
-                print(f"  + {name}: base class: {base_class}")
-                self.all_base_classes[name] = base_class
-            
-        print(f"\n{'='*60}")
-        print(f"\nTotal valid classes with base classes: {len(self.all_base_classes)}\n")
-        print(f"{'='*60}\n")
-        return self.all_base_classes
         
     
-    def import_all_classes(self):
+    def _import_all_classes(self):
         """Import all classes from retico modules and their submodules into the caller's global namespace"""
         
         print(f"\n{'='*60}")
@@ -107,9 +93,35 @@ class Config:
             # Get all members of the module
             for name, obj in inspect.getmembers(module):
                 if inspect.isclass(obj):
+                    if obj.__base__.__name__.lower() in self.RESTRICTED_MODULES:
+                        continue
+                    
                     if obj.__module__ == module_name:
                         self.all_classes[name] = obj
+                        sig = inspect.signature(obj.__init__)
+                        
+                        params = dict()
+                        serializable_params = dict()
+                        
+                        for param in sig.parameters.values():
+                            if param.name == 'self' or param.kind != param.POSITIONAL_OR_KEYWORD:
+                                continue
+                            params[param.name] = param.default if param.default != inspect.Parameter.empty else None
+                            serializable_params[param.name] = self._get_serializable_default(param.default)
+                            
+                        new_module = Module(name=name, base_class=obj.__base__.__name__, params=params, serializable_params=serializable_params)
+                        self.modules_with_params[name] = new_module
+
+    def _get_serializable_default(self, default):
+        """Convert any default value to a JSON-serializable format"""
         
-        return self.all_classes
-    
-config = Config()
+        if default is None or default == inspect.Parameter.empty:
+            return None
+        
+        try:
+            json.dumps(default)
+            return default
+        except (TypeError, ValueError):
+            if inspect.isclass(default):
+                return default.__name__
+            return default.__class__.__name__

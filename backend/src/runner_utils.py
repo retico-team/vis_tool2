@@ -1,143 +1,117 @@
 import threading
-import time
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer, TextIteratorStreamer
-from configure_env import config
+from websocket_utils import SocketManager
+from collections import defaultdict
 
-class RunnerController:
+class RunnerController(SocketManager):
     def __init__(self):
+        super().__init__()
         self.stop_event = threading.Event()
         self.runner_thread = None
         self.initialized = threading.Event()
         self.timeout = 180
-        self.sio = None
     
     def runner(self):
-        config.import_all_classes()
+        self._import_all_classes()
+        from retico_core import network
         
-        microphone = MicrophoneModule()
-        asr = WhisperASRModule(language="english")
-        logger = LoggerModule(sio=self.sio, route='data')
+        unique_modules = set(self.connections.keys())
+        instantiated = defaultdict()
+        
+        for conns in self.connections.values():
+            unique_modules.update(conns)
+        
+        for module in unique_modules:
+            params = {}
+            if module in self.modules_with_params:
+                params = self.modules_with_params[module].params.copy()
+            
+            if module == "LoggerModule":
+                params = {"sio": self.sio, "route": 'data'}
+                
+            elif module in self.param_overrides:
+                user_params = self.param_overrides[module]
+                for key, value in user_params.items():
+                    if key in params:
+                        original_value = params[key]
+                        try:
+                            if isinstance(original_value, bool):
+                                params[key] = value.lower() in ('true', '1')
+                            elif isinstance(original_value, int):
+                                params[key] = int(value)
+                            elif isinstance(original_value, float):
+                                params[key] = float(value)
+                            else:
+                                params[key] = value
+                        except (ValueError, AttributeError):
+                            params[key] = value
+                    else:
+                        params[key] = value
+                        
+            try:
+                instantiated[module] = self.all_classes[module](**params)
+                self.app.logger.info(f"Instantiated {module} with params: {params}")
+            except TypeError as e:
+                self.app.logger.warning(f"Failed to instantiate {module} with params {params}: {e}")
+                instantiated[module] = self.all_classes[module]()
+            
+        
+        last_computed = None
+
+        for module in self.connections:
+            self.app.logger.info(f"Module: {module}, Connected to: {self.connections[module]}")
+            for conn in self.connections[module]:
+                source = instantiated[module]
+                target = instantiated[conn]
+                last_computed = target
+                source.subscribe(target)
+                self.app.logger.info(f"  - {conn}")
+        
+        self.app.logger.info(f"Full network {network.discover(last_computed)}")
+        network_starter = instantiated[list(self.connections.keys())[0]]
+        
+        network.run(network_starter)
+        
+        self.initialized.set()
+        
+        self.stop_event.wait()
+        
+        network.stop(network_starter)
+        
+    def zmq_runner(self):
+        self._import_all_classes()
+        from retico_core import network
+        
+        ip2 = "127.0.0.1" #use writer's ip
+        
+        reader = ReaderSingleton(ip=ip2, port='6002')
+        tts = GoogleTTSModule()
+        speaker = StreamingSpeakerModule(frame_length=0.2)
         debug = DebugModule()
-        wav2vec_asr = Wav2VecASRModule()
-        # gasr = GoogleASRModule()
-
-        ip = '127.0.0.1'
-        WriterSingleton(ip=ip, port='12345')
-        # reader = ReaderSingleton(ip=ip, port='12346')
-        zmqwriter = ZeroMQWriter(topic='asr')
-        # reader.add(topic='asr', target_iu_type=IncrementalUnit)
-        
-        microphone.subscribe(asr)
-        microphone.subscribe(wav2vec_asr)
-        # microphone.subscribe(gasr)
-        
-        wav2vec_asr.subscribe(zmqwriter)
-        asr.subscribe(zmqwriter)
-        # gasr.subscribe(zmqwriter)
-        
-        # reader.subscribe(debug)
-        # reader.subscribe(logger)
-        
-        # gasr.subscribe(debug)
-        asr.subscribe(debug)
-        wav2vec_asr.subscribe(debug)
-        
-        # gasr.subscribe(logger)
-        asr.subscribe(logger)
-        wav2vec_asr.subscribe(logger)
-
-        microphone.run()
-        # gasr.run()
-        wav2vec_asr.run()
-        asr.run()
-        zmqwriter.run()
-        # reader.run()
-        debug.run()
-        logger.run()
-        
-        self.initialized.set()
-        
-        self.stop_event.wait()
-        
-        asr.stop()
-        # gasr.stop()
-        wav2vec_asr.stop()
-        microphone.stop()
-        zmqwriter.stop()
-        # reader.stop()
-        logger.stop()
-        debug.stop()
-        
-    def runner2(self):
-        config.import_all_classes()
-
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-
-        """ HuggingFace Model, Tokenzier, Model """
-        checkpoint = "HuggingFaceTB/SmolLM2-135M-Instruct"
-        tokenizer = AutoTokenizer.from_pretrained(checkpoint, trust_remote_code=True)
-        model = AutoModelForCausalLM.from_pretrained(checkpoint, trust_remote_code=True).to(device)
-        streamer = TextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
-
-        ip = '127.0.0.1'
-
-        mic = MicrophoneModule()
-        asr = WhisperASRModule(language='english')
-        debug = DebugModule(print_payload_only=True)
-        lm = HuggingfaceLM(device, tokenizer, model, streamer)
-        
-        WriterSingleton(ip=ip, port='12345')
-        # asr_writer = ZeroMQWriter(topic='asr')
-        lm_writer = ZeroMQWriter(topic='lm')
-        # reader = ReaderSingleton(ip=ip, port='12346')
-        # reader.add(topic='asr', target_iu_type=SpeechRecognitionIU)
-        # reader.add(topic='lm', target_iu_type=TextIU)
-        
         logger = LoggerModule(sio=self.sio, route='data')
-
-        mic.subscribe(asr)
-        asr.subscribe(lm)
-        lm.subscribe(lm_writer)
         
-        asr.subscribe(debug)
-        lm.subscribe(debug)
-        asr.subscribe(logger)
-        lm.subscribe(logger)
+        reader.add(topic='asr', target_iu_type=SpeechRecognitionIU)
 
-        # reader.subscribe(debug)
-        # reader.subscribe(logger)
+        reader.subscribe(debug)
+        reader.subscribe(logger)
+        reader.subscribe(tts)
+        tts.subscribe(speaker)        
+        network.run(reader)
+        
+        self.app.logger.info("RUNNING!")
 
-        mic.run()
-        asr.run()
-        print(f"Hugging Face Model: {checkpoint}")
-        lm.run()
-        # asr_writer.run()
-        lm_writer.run()
-        # reader.run()
-        debug.run()
-        logger.run()
-
-        print("Runner initialized...")
         self.initialized.set()
         
         self.stop_event.wait()
 
-        mic.stop()
-        asr.stop()
-        lm.stop()
-        # asr_writer.stop()
-        lm_writer.stop()
-        # reader.stop()
-        debug.stop()
-        logger.stop()
-        
+        network.stop(reader)
     
     def start(self):
         if not self.is_running():
             self.initialized.clear()
             self.stop_event.clear()
-            self.runner_thread = threading.Thread(target=self.runner2, daemon=True, name="RunnerController")
+            self.runner_thread = threading.Thread(target=self.runner, daemon=True, name="RunnerController")
             self.runner_thread.start()
             
             if self.initialized.wait(timeout=self.timeout):
@@ -150,9 +124,6 @@ class RunnerController:
     
     def is_running(self):
         return self.runner_thread is not None and self.runner_thread.is_alive()
-    
-    def configure_socket(self, sio):
-        self.sio = sio
         
 
 controller = RunnerController()
