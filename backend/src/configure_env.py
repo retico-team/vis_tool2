@@ -12,11 +12,11 @@ class Config:
         self.RETICO_BASE_PATH = Path.cwd().parents[2]
         self.RETICO_MODULES = set(dir.name for dir in self.RETICO_BASE_PATH.iterdir() if dir.is_dir() and dir.name.startswith('retico-'))
         self.RESTRICTED_MODULES = ['object', 'queue', 'enum']
+        self.WHITELISTED_MODULES = ['writersingleton']
         self.all_modules = dict()
         self.all_classes = dict()
         self.modules_with_params = dict()
         self._configure_env()
-        
     
     def _import_all_classes(self):
         """Import all classes from retico modules and their submodules into the caller's global namespace"""
@@ -93,7 +93,7 @@ class Config:
             # Get all members of the module
             for name, obj in inspect.getmembers(module):
                 if inspect.isclass(obj):
-                    if obj.__base__.__name__.lower() in self.RESTRICTED_MODULES:
+                    if obj.__base__.__name__.lower() in self.RESTRICTED_MODULES and not obj.__name__.lower() in self.WHITELISTED_MODULES:
                         continue
                     
                     if obj.__module__ == module_name:

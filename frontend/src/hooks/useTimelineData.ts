@@ -14,10 +14,15 @@ const useTimelineData = () => {
 
     const addNode = useCallback((data: IUData) => {
         const { GroundedIn: groundedInData, PreviousIUID: previousIU } = data;
-        
+        let label = data.IU;
+
+        if (data.IU && data.IU.toString().length > 30) {
+            label = data.Module.split(" ")[0] + " Stream";
+        }
+
         const node = {
             id: data.IUID,
-            label: data.IU,
+            label: label,
             updateType: data.UpdateType,
             age: data.Age,
             module: data.Module,

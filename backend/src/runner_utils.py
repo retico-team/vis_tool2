@@ -42,6 +42,8 @@ class RunnerController(SocketManager):
                                 params[key] = int(value)
                             elif isinstance(original_value, float):
                                 params[key] = float(value)
+                            elif value in self.all_classes.keys():
+                                params[key] = self.all_classes[value]
                             else:
                                 params[key] = value
                         except (ValueError, AttributeError):
@@ -85,13 +87,11 @@ class RunnerController(SocketManager):
         
         ip2 = "127.0.0.1" #use writer's ip
         
-        reader = ReaderSingleton(ip=ip2, port='6002')
+        reader = ZMQReaderModule(ip=ip2, port='6002', topic='asr')
         tts = GoogleTTSModule()
         speaker = StreamingSpeakerModule(frame_length=0.2)
         debug = DebugModule()
         logger = LoggerModule(sio=self.sio, route='data')
-        
-        reader.add(topic='asr', target_iu_type=SpeechRecognitionIU)
 
         reader.subscribe(debug)
         reader.subscribe(logger)
