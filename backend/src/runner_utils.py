@@ -23,11 +23,13 @@ class RunnerController(SocketManager):
             unique_modules.update(conns)
         
         for module in unique_modules:
+            obj = module.split('-')[0]
             params = {}
-            if module in self.modules_with_params:
-                params = self.modules_with_params[module].params.copy()
             
-            if module == "LoggerModule":
+            if obj in self.modules_with_params:
+                params = self.modules_with_params[obj].params.copy()
+            
+            if self.all_classes[obj].__name__ == "LoggerModule":
                 params = {"sio": self.sio, "route": 'data'}
                 
             elif module in self.param_overrides:
@@ -50,25 +52,26 @@ class RunnerController(SocketManager):
                             params[key] = value
                     else:
                         params[key] = value
-                        
+                 
             try:
-                instantiated[module] = self.all_classes[module](**params)
-                self.app.logger.info(f"Instantiated {module} with params: {params}")
+                instantiated[module] = self.all_classes[obj](**params)
+                self.app.logger.info(f"Instantiated {self.all_classes[obj].__name__} with params: {params}")
             except TypeError as e:
-                self.app.logger.warning(f"Failed to instantiate {module} with params {params}: {e}")
-                instantiated[module] = self.all_classes[module]()
-            
-        
+                self.app.logger.warning(f"Failed to instantiate {self.all_classes[obj].__name__} with params {params}: {e}")
+                instantiated[module] = self.all_classes[obj]()
         last_computed = None
 
         for module in self.connections:
-            self.app.logger.info(f"Module: {module}, Connected to: {self.connections[module]}")
+            mod_split = module.split('-')
+            mod_name = f'{instantiated[module].__class__.__name__}-{mod_split[1]}' if len(mod_split) > 1 else instantiated[module].__class__.__name__
             for conn in self.connections[module]:
                 source = instantiated[module]
                 target = instantiated[conn]
                 last_computed = target
                 source.subscribe(target)
-                self.app.logger.info(f"  - {conn}")
+                conn_split = conn.split('-')
+                conn_name = f'{instantiated[conn].__class__.__name__}-{conn_split[1]}' if len(conn_split) > 1 else instantiated[conn].__class__.__name__
+                self.app.logger.info(f" {mod_name} -> {conn_name}")
         
         self.app.logger.info(f"Full network {network.discover(last_computed)}")
         network_starter = instantiated[list(self.connections.keys())[0]]

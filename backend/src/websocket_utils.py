@@ -1,7 +1,6 @@
 from flask_socketio import SocketIO
 from collections import defaultdict
 from configure_env import Config
-from module import Module
 
 class SocketManager(Config):
     def __init__(self):
@@ -44,19 +43,18 @@ class SocketManager(Config):
             
         @self.sio.on('add_edge')
         def handle_add_edge(data):
-            source = data['source'].split('-')[0]
-            target = data['target'].split('-')[0]
+            source = data['source']
+            target = data['target']
             
             if target not in self.connections[source]:
                 self.connections[source].append(target)
-                self.app.logger.info(f"Updated connections: {self.connections}")
+                self.app.logger.info(f"Added connection from {source} to {target}: {self.connections}")
             else:
                 self.app.logger.info(f"Connection from {source} to {target} already exists.")
                 
         @self.sio.on('delete_node')
         def handle_delete_node(data):
-            node_id = data.get('nodeId', '')
-            module_name = node_id.split('-')[0]
+            module_name = data.get('nodeId', '')
             
             # remove all connections to and from this module
             if module_name in self.connections:
@@ -70,8 +68,7 @@ class SocketManager(Config):
                     
         @self.sio.on('update_params')
         def handle_update_params(data):
-            node_id = data.get('nodeId', '')
-            module_name = node_id.split('-')[0]
+            module_name = data.get('nodeId', '')
             params = data.get('params', {})
             
             if module_name in self.modules_with_params:

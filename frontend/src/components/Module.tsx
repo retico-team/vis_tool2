@@ -28,18 +28,18 @@ const Module = () => {
   const { socket } = useSocketContext();
 
   const groupedModules = useMemo(() => {
-    const filteredModules = Object.keys(modules).filter((moduleName) => {
-      const matchesSearch = moduleName.toLowerCase().includes(searchTerm.toLowerCase());
+    const filteredModules = Object.keys(modules).filter((moduleId) => {
+      const matchesSearch = modules[moduleId]?.name.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesSearch;
     });
 
     // group by base_class
-    const grouped = filteredModules.reduce((acc, moduleName) => {
-      const baseClass = modules[moduleName]?.base_class || 'Other';
+    const grouped = filteredModules.reduce((acc, moduleId) => {
+      const baseClass = modules[moduleId]?.base_class || 'Other';
       if (!acc[baseClass]) {
         acc[baseClass] = [];
       }
-      acc[baseClass].push(moduleName);
+      acc[baseClass].push(moduleId);
       return acc;
     }, {} as Record<string, string[]>);
 
@@ -145,15 +145,15 @@ const Module = () => {
                   {category}
                 </h3>
                 <div className="space-y-1">
-                  {moduleList.map((moduleName) => (
+                  {moduleList.map((moduleId) => (
                     <button
-                      key={moduleName}
-                      onClick={() => addModuleNode(moduleName)}
+                      key={moduleId}
+                      onClick={() => addModuleNode(moduleId)}
                       className="w-full text-left px-3 py-2 text-sm rounded hover:bg-blue-50 hover:text-blue-700 transition-colors border border-transparent hover:border-blue-200"
                     >
-                      <div className="font-medium">{moduleName}</div>
+                      <div className="font-medium">{modules[moduleId]?.name}</div>
                       <div className="text-xs text-gray-500">
-                        {modules[moduleName]?.base_class}
+                        {modules[moduleId]?.base_class}
                       </div>
                     </button>
                   ))}

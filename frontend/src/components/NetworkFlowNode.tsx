@@ -16,7 +16,7 @@ const NetworkFlowNode = memo(({ data, id }: { data: NetworkNode, id: string }) =
       position={Position.Left}
       className="w-3 h-3 !bg-gray-400"
       />
-      <div className="font-semibold text-sm text-gray-800">{id}</div>
+      <div className="font-semibold text-sm text-gray-800">{data.name ?? id}</div>
 
       <Handle 
       type="source" 

@@ -62,7 +62,8 @@ function Timeline() {
                     y: 100
                 },
                 data: {
-                    label: node.module,
+                    label: node.moduleName,
+                    color: getModuleColor(node.module, 'previous'),
                     updateType: 'MODULE',
                     isModule: true,
                     timeCreated: node.timeCreated.toLocaleString() + node.timeCreated.getMilliseconds().toString().padStart(3, '0'),
@@ -173,15 +174,10 @@ function Timeline() {
                 {((uniqueModules?.size ?? 0) > 0) && (
                 <div className="mt-3 pt-3 border-t border-gray-200">
                     <div className="text-xs text-gray-600 space-y-1">
-                        {Array.from(uniqueModules).map(module => (
-                            <div key={module} className="flex items-center gap-2">
-                                <div 
-                                    className="w-8 h-0.5" 
-                                    style={{
-                                        backgroundColor: getModuleColor(module, 'processed')
-                                    }}
-                                />
-                                <span>{module}</span>
+                        {Array.from(uniqueModules.entries()).map(([moduleId, moduleName]) => (
+                            <div key={moduleId} className="flex items-center gap-2">
+                                <div className="w-8 h-0.5" style={{ backgroundColor: getModuleColor(moduleId, 'previous') }} />
+                                <span>{moduleName}</span>
                             </div>
                         ))}
                         <div className="flex items-center gap-2">

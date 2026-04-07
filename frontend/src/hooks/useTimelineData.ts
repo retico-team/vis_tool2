@@ -5,7 +5,7 @@ import type { TimelineData, IUData } from "@/types/allTypes";
 
 const useTimelineData = () => {
     const { socket, isConnected } = useSocketContext();
-    const [uniqueModules, setUniqueModules] = useState<Set<string>>(new Set());
+    const [uniqueModules, setUniqueModules] = useState<Map<string, string>>(new Map());
     const [timelineData, setTimelineData] = useState<TimelineData>({
         nodes: new Map(),
         edges: [],
@@ -17,7 +17,7 @@ const useTimelineData = () => {
         let label = data.IU;
 
         if (data.IU && data.IU.toString().length > 30) {
-            label = data.Module.split(" ")[0] + " Stream";
+            label = data.ModuleName.split(" ")[0] + " Stream";
         }
 
         const node = {
@@ -26,6 +26,7 @@ const useTimelineData = () => {
             updateType: data.UpdateType,
             age: data.Age,
             module: data.Module,
+            moduleName: data.ModuleName,
             timeCreated: new Date(parseFloat(data.TimeCreated) * 1000),
             previousNodeId: previousIU ?? null,
             groundedInNodeId: groundedInData?.IUID ?? null,
@@ -34,8 +35,9 @@ const useTimelineData = () => {
 
         const groundedInNode = groundedInData ? {
             id: groundedInData.IUID,
-            label: groundedInData.Module.split(" ")[0] + " Stream",
+            label: groundedInData.ModuleName.split(" ")[0] + " Stream",
             module: groundedInData.Module,
+            moduleName: groundedInData.ModuleName,
             updateType: groundedInData.UpdateType,
             age: groundedInData.Age,
             timeCreated: new Date(parseFloat(groundedInData.TimeCreated) * 1000),
@@ -105,7 +107,7 @@ const useTimelineData = () => {
                 }
             }
 
-            setUniqueModules((prev) => new Set(prev).add(node.module));
+            setUniqueModules((prev) => new Map(prev).set(node.module, node.moduleName));
 
             return {
                 nodes: newNodes,
@@ -121,7 +123,7 @@ const useTimelineData = () => {
             edges: [],
             latestUpdate: null,
         });
-        setUniqueModules(new Set());
+        setUniqueModules(new Map());
     }, []);
 
     useEffect(() => {

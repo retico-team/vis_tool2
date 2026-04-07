@@ -8,7 +8,7 @@ const useNetworkData = () => {
     const [networkData, setNetworkData] = useState<NetworkFlowData>({
         nodes: new Map(),
         edges: [],
-        uniqueModules: new Set<string>(),
+        uniqueModules: new Map(),
     });
 
     const addNode = useCallback((data: NetworkData) => {
@@ -21,7 +21,7 @@ const useNetworkData = () => {
         setNetworkData((prev: NetworkFlowData) => {
             const newNodes = new Map(prev.nodes);
             const newEdges = [...prev.edges];
-            const newModules = new Set(prev.uniqueModules);
+            const newModules = new Map(prev.uniqueModules);
 
             const idToNodeMap = new Map<string, NetworkList>();
             const inDegree = new Map<string, number>();
@@ -30,13 +30,13 @@ const useNetworkData = () => {
             Object.entries(networkData.networkList).forEach(([module, info]: [string, NetworkList]) => {
                 inDegree.set(module, 0);
                 idToNodeMap.set(module, info);
-                newModules.add(module);
+                newModules.set(module, info.name);
             });
 
             Object.entries(networkData.networkList).forEach(([module, info]: [string, NetworkList]) => {
                 for (const parent of info.previous_mods) {
                     if (!childrenMap.has(parent)) {
-                        childrenMap.set(parent, new Set<string>);
+                        childrenMap.set(parent, new Set<string>());
                     }
                     inDegree.set(module, (inDegree.get(module) || 0) + 1);
                     childrenMap.get(parent)!.add(module);
@@ -88,6 +88,7 @@ const useNetworkData = () => {
                     if (!newNodes.has(module.current_mod)) {
                         newNodes.set(module.current_mod, {
                             id: module.current_mod,
+                            name: module.name,
                             layerXPos: layerIndex,
                             color: getModuleColor(module.current_mod, 'previous'),
                         });
@@ -122,7 +123,7 @@ const useNetworkData = () => {
         setNetworkData({
             nodes: new Map(),
             edges: [],
-            uniqueModules: new Set<string>(),
+            uniqueModules: new Map(),
         });
     }, []);
 

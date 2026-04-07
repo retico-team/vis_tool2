@@ -28,6 +28,7 @@ function Network() {
           
           const flowNode: ReactFlow.Node<NetworkNode> = {
             id: node.id,
+            name: node.name,
             type: 'custom',
             position: {
               x: node.layerXPos * 250 + 200,
@@ -35,6 +36,7 @@ function Network() {
             },
             data: {
               color: node.color || '#6366f1',
+              name: node.name,
             },
           };
           return flowNode;
@@ -110,17 +112,12 @@ function Network() {
             {(uniqueModules?.size ?? 0) > 0 && (
               <div className="mt-3 pt-3 border-t border-gray-200">
                   <div className="text-xs text-gray-600 space-y-1">
-                      {Array.from(uniqueModules).map((module) => (
-                          <div key={module} className="flex items-center gap-2">
-                              <div 
-                                  className="w-8 h-0.5" 
-                                  style={{
-                                      backgroundColor: getModuleColor(module, 'previous')
-                                  }}
-                              />
-                              <span>{module}</span>
-                          </div>
-                      ))}
+                    {Array.from(uniqueModules.entries()).map(([moduleId, moduleName]) => (
+                        <div key={moduleId} className="flex items-center gap-2">
+                            <div className="w-8 h-0.5" style={{ backgroundColor: getModuleColor(moduleId, 'previous') }} />
+                            <span>{moduleName}</span>
+                        </div>
+                    ))}
                   </div>
               </div>
             )}

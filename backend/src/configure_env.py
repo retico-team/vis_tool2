@@ -26,9 +26,9 @@ class Config:
         print(f"{'='*60}")
         
         caller_globals = inspect.currentframe().f_back.f_globals
-        for name, obj in self.all_classes.items():
-            caller_globals[name] = obj
-            print(f"  - Imported: {name}")
+        for mod_id, obj in self.all_classes.items():
+            caller_globals[mod_id] = obj
+            print(f"  - Imported: {obj.__name__} (Module ID: {mod_id})")
                 
         print(f"\nImported {len(self.all_classes)} unique classes into caller's global namespace\n")
         
@@ -97,7 +97,7 @@ class Config:
                         continue
                     
                     if obj.__module__ == module_name:
-                        self.all_classes[name] = obj
+                        self.all_classes[str(id(obj))] = obj
                         sig = inspect.signature(obj.__init__)
                         
                         params = dict()
@@ -109,8 +109,8 @@ class Config:
                             params[param.name] = param.default if param.default != inspect.Parameter.empty else None
                             serializable_params[param.name] = self._get_serializable_default(param.default)
                             
-                        new_module = Module(name=name, base_class=obj.__base__.__name__, params=params, serializable_params=serializable_params)
-                        self.modules_with_params[name] = new_module
+                        new_module = Module(name=name, mod_id=str(id(obj)), base_class=obj.__base__.__name__, params=params, serializable_params=serializable_params)
+                        self.modules_with_params[new_module.mod_id] = new_module
 
     def _get_serializable_default(self, default):
         """Convert any default value to a JSON-serializable format"""
