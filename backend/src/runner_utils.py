@@ -1,6 +1,4 @@
 import threading
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer, TextIteratorStreamer
 from websocket_utils import SocketManager
 from collections import defaultdict
 
@@ -109,6 +107,7 @@ class RunnerController(SocketManager):
         self.stop_event.wait()
 
         network.stop(reader)
+        
     
     def start(self):
         if not self.is_running():

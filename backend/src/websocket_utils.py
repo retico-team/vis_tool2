@@ -18,7 +18,7 @@ class SocketManager(Config):
             
     def run(self, **kwargs):
         if self.sio:
-            self.sio.run(self.app, **kwargs)
+            self.sio.run(self.app, allow_unsafe_werkzeug=True, **kwargs)
             
     def _set_initial_data(self):
         serialized_modules = {
