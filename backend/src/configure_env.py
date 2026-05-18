@@ -27,9 +27,9 @@ class Config:
         
         caller_globals = inspect.currentframe().f_back.f_globals
         for mod_id, obj in self.all_classes.items():
-            caller_globals[mod_id] = obj
+            caller_globals[obj.__name__] = obj
             print(f"  - Imported: {obj.__name__} (Module ID: {mod_id})")
-                
+        
         print(f"\nImported {len(self.all_classes)} unique classes into caller's global namespace\n")
         
     def _configure_env(self):

@@ -1,6 +1,7 @@
 import type { TimelineEdge, EdgeType } from "@/types/allTypes";
 
 const getModuleColor = (module: string, type: EdgeType): string => {
+    if (!module) return type === 'grounded' ? 'hsl(0, 0%, 40%)' : 'hsl(0, 0%, 55%)'; // unknown creator fallback
     const hashString = (str: string): number => {
         let hash = 0;
         for (let i = 0; i < str.length; i++) {

@@ -69,6 +69,7 @@ class SocketManager(Config):
         @self.sio.on('update_params')
         def handle_update_params(data):
             module_name = data.get('nodeId', '')
+            module_name = module_name.split('-')[0]
             params = data.get('params', {})
             
             if module_name in self.modules_with_params:

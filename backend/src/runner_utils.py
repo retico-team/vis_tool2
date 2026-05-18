@@ -30,8 +30,8 @@ class RunnerController(SocketManager):
             if self.all_classes[obj].__name__ == "LoggerModule":
                 params = {"sio": self.sio, "route": 'data'}
                 
-            elif module in self.param_overrides:
-                user_params = self.param_overrides[module]
+            elif obj in self.param_overrides:
+                user_params = self.param_overrides[obj]
                 for key, value in user_params.items():
                     if key in params:
                         original_value = params[key]
@@ -52,8 +52,8 @@ class RunnerController(SocketManager):
                         params[key] = value
                  
             try:
+                print(f"Instantiating {self.all_classes[obj].__name__} with params: {params}")
                 instantiated[module] = self.all_classes[obj](**params)
-                self.app.logger.info(f"Instantiated {self.all_classes[obj].__name__} with params: {params}")
             except TypeError as e:
                 self.app.logger.warning(f"Failed to instantiate {self.all_classes[obj].__name__} with params {params}: {e}")
                 instantiated[module] = self.all_classes[obj]()
@@ -107,6 +107,51 @@ class RunnerController(SocketManager):
         self.stop_event.wait()
 
         network.stop(reader)
+        
+    def custom(self):
+        pass
+        # self._import_all_classes()
+        
+        # import os
+        # import sys
+        # import torch
+        # from transformers import AutoModelForCausalLM, AutoTokenizer, TextStreamer, TextIteratorStreamer
+
+        # device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        # """ HuggingFace Model, Tokenzier, Model """
+        # checkpoint = "HuggingFaceTB/SmolLM2-135M-Instruct"
+        # tokenizer = AutoTokenizer.from_pretrained(checkpoint,  trust_remote_code=True)
+        # model = AutoModelForCausalLM.from_pretrained(checkpoint,  trust_remote_code=True).to(device)
+        # streamer = TextStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
+
+        # mic = MicrophoneModule()
+        # asr = WhisperASRModule(language='english')
+        # debug = DebugModule(print_payload_only=True)
+        # lm = HuggingfaceLM(device, tokenizer, model, streamer)
+        # logger = LoggerModule(sio=self.sio, route='data')
+
+        # mic.subscribe(asr)
+        # asr.subscribe(debug)
+        # asr.subscribe(lm)
+        # lm.subscribe(logger)
+
+        # mic.run()
+        # asr.run()
+        # debug.run()
+        # print(f"Hugging Face Model: {checkpoint}")
+        # lm.run()
+        # logger.run()
+
+        # self.initialized.set()
+        
+        # self.stop_event.wait()
+
+        # mic.stop()
+        # asr.stop()
+        # lm.stop()
+        # debug.stop()
+        # logger.stop()
         
     
     def start(self):
