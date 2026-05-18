@@ -1,21 +1,23 @@
+[build-system]
+requires = ["setuptools>=80", "setuptools-scm[simple]>=8"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "vis-tool2"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Visual Tool for Retico"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = [
+    "flask>=3.1.3",
     "flask-cors>=6.0.2",
-    "flask-socketio>=5.6.0",
-    "google-cloud-speech>=2.35.0",
-    "google-cloud-texttospeech>=2.34.0",
-    "matplotlib>=3.10.8",
-    "opencv-python>=4.12.0.88",
-    "pillow>=12.1.0",
-    "pyaudio>=0.2.14",
-    "pydub>=0.25.1",
-    "pyzmq>=27.1.0",
-    "torch>=2.9.1",
-    "transformers>=4.57.3",
-    "webrtcvad>=2.0.10",
+    "flask-socketio>=5.6.1",
 ]
+authors = [
+    {name = "Jason Do"},
+]
+license = { file = "LICENSE" }
+keywords = ["real-time", "retico", "visual", "tool"]
+
+[tool.setuptools.packages.find]
+include = ["backend*"]
